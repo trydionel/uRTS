@@ -97,16 +97,20 @@ uRTS.FogOfWar = (function() {
     };
     
     FogOfWar.prototype.render = function(context) {
-        var size = context.canvas.width / this.size;
-        context.fillStyle = 'darkgray';
-        
-        for (var y = 0; y < this.size; y++) {
-            for (var x = 0; x < this.size; x++) {
-                if (this.presentAt(x, y)) {
-                    context.fillRect(size * x, size * y, size, size);
+        this._cached = this._cached || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
+            var size = buffer.canvas.width / this.size;
+            buffer.fillStyle = 'darkgray';
+            
+            for (var y = 0; y < this.size; y++) {
+                for (var x = 0; x < this.size; x++) {
+                    if (this.presentAt(x, y)) {
+                        buffer.fillRect(size * x, size * y, size, size);
+                    }
                 }
             }
-        }
+        }.bind(this));
+        
+        context.drawImage(this._cached, 0, 0);
     };
     
     return FogOfWar;
