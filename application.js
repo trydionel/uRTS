@@ -7,13 +7,14 @@ var renderToCanvas = function(width, height, renderFunction) {
     return buffer;
 };
 
-var Game = (function() {
+var uRTS = {};
+uRTS.Game = (function() {
     function Game(options) {
         this.playing = true;
-        this.field = new Field(50);
+        this.field = new uRTS.Field(100);
         this.players = [
-            new Player('blue', this.field),
-            new Player('red', this.field)
+            new uRTS.Player('blue', this.field, { human: true }),
+            new uRTS.Player('red', this.field)
         ];
         this.canvas = document.getElementById('game');
         this.context = this.canvas.getContext('2d');
@@ -57,11 +58,69 @@ var Game = (function() {
     return Game;
 })();
 
-var Player = (function() {
-    function Player(color, field) {
+uRTS.FogOfWar = (function() {
+    var FOG_MASK = 1;
+    
+    function FogOfWar(size) {
+        this.size = size;
+        
+        var row, fog = [];
+        for (var j = 0; j < this.size; j++) {
+            row = [];
+            for (var i = 0; i < this.size; i++) {
+                row.push(FOG_MASK);
+            }
+            fog.push(row);
+        }
+        this.fog = fog;
+    }
+    
+    FogOfWar.prototype.presentAt = function(x, y) {
+        return this.fog[y][x] === FOG_MASK;
+    };
+    
+    FogOfWar.prototype.reveal = function(x, y, radius) {
+        var tx, ty;
+        radius = radius || 1;
+        
+        for (var dy = -radius; dy <= radius; dy++) {
+            for (var dx = -radius; dx <= radius; dx++) {
+                if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+                    tx = x + dx;
+                    ty = y + dy;
+                    if (tx >= 0 && tx < this.size && ty >= 0 && ty < this.size) {
+                        this.fog[ty][tx] &= ~FOG_MASK;
+                    }
+                }
+            }
+        }
+    };
+    
+    FogOfWar.prototype.render = function(context) {
+        var size = context.canvas.width / this.size;
+        context.fillStyle = 'darkgray';
+        
+        for (var y = 0; y < this.size; y++) {
+            for (var x = 0; x < this.size; x++) {
+                if (this.presentAt(x, y)) {
+                    context.fillRect(size * x, size * y, size, size);
+                }
+            }
+        }
+    };
+    
+    return FogOfWar;
+})();
+
+uRTS.Player = (function() {
+    function Player(color, field, options) {
+        options = options || {};
+        
         this.color = color;
         this.field = field;
+        this.human = options.human;
         this.entities = [];
+        this.fog = new uRTS.FogOfWar(this.field.size);
         
         this.initializeBase();
         this.initializeWorkers(3);
@@ -69,17 +128,17 @@ var Player = (function() {
     }
     
     Player.prototype.initializeBase = function() {
-        this.base = new Base(this, this.field);
+        this.base = new uRTS.Base(this, this.field);
         this.entities.push(this.base);
 
         // Create opening in fog-of-war around the base
-        this.field.clearFog(this.base.x, this.base.y, 6);
+        this.clearFog(this.base.x, this.base.y, 6);
     };
 
     Player.prototype.initializeWorkers = function(n) {
         var worker;        
         for (var i = 0; i < n; i++) {
-            worker = new Worker(this, this.field);
+            worker = new uRTS.Worker(this, this.field);
             this.entities.push(worker);
         }        
     };
@@ -87,7 +146,7 @@ var Player = (function() {
     Player.prototype.initializeWarriors = function(n) {
         var warrior;        
         for (var i = 0; i < n; i++) {
-            warrior = new Warrior(this, this.field);
+            warrior = new uRTS.Warrior(this, this.field);
             this.entities.push(warrior);
         }        
     };
@@ -102,14 +161,22 @@ var Player = (function() {
         this.entities.forEach(function(entity) {
             entity.render(context);
         });
+        if (this.human) this.fog.render(context);
     };
         
+
+    Player.prototype.underFog = function(x, y) {
+        return this.fog.presentAt(x, y);
+    };
+    
+    Player.prototype.clearFog = function(x, y, radius) {
+        this.fog.reveal(x, y, radius);
+    };
+    
     return Player;
 })();
 
-var Field = (function() {
-    var FOG_OF_WAR_MASK = 2 << 10;
-        
+uRTS.Field = (function() {
     function Field(size) {
         this.size = size;
         this.entities = [];
@@ -129,12 +196,10 @@ var Field = (function() {
         for (var _i = 0; _i < this.size; _i++) terrain.push([]);
         
         // Lay noise into terrain. Double-scale noise for a more
-        // tangible look-n-feel. Mask all tiles as hidden under
-        // fog-of-war.
+        // tangible look-n-feel.
         for (var i = 0; i < this.size / 2.0; i++) {
             for (var j = 0; j < this.size / 2.0; j++) {
                 n = Math.round(simplex.noise(i, j) + 1);
-                n += FOG_OF_WAR_MASK;
                 terrain[2 * i][2 * j] = n;
                 terrain[2 * i + 1][2 * j] = n;
                 terrain[2 * i][2 * j + 1] = n;
@@ -156,7 +221,7 @@ var Field = (function() {
         // Keep an index of resources for faster lookups
         this.resources = [];
         for (var i = 0; i < n; i++) {
-            resource = new Resource(this);
+            resource = new uRTS.Resource(this);
             this.resources.push(resource);
             this.entities.push(resource);
         }
@@ -171,10 +236,8 @@ var Field = (function() {
     Field.prototype.render = function(context) {
         this.renderSelf(context);
         this.entities.forEach(function(entity) {
-            if (!this.underFog(entity.x, entity.y)) {
-                entity.render(context);
-            }
-        }.bind(this));
+            entity.render(context);
+        });
     };
     
     Field.prototype.renderSelf = function(context) {
@@ -183,12 +246,8 @@ var Field = (function() {
             var color, lum;
             this.terrain.forEach(function(row, y) {
                 row.forEach(function(height, x) {
-                    if (height & FOG_OF_WAR_MASK) {
-                        color = 'darkgrey';
-                    } else {
-                        lum = 10 + (1 + height) / 8.0 * 100;
-                        color = 'hsl(90, 60%, ' + lum + '%)';
-                    }
+                    lum = 10 + (1 + height) / 8.0 * 100;
+                    color = 'hsl(90, 60%, ' + lum + '%)';
     
                     buffer.fillStyle = color;
                     buffer.fillRect(size * x, size * y, size, size);
@@ -201,8 +260,8 @@ var Field = (function() {
     Field.prototype.availableResources = function(player) {
         return this.resources.filter(function(resource) {
             return resource.isAvailable(player) &&
-                !this.underFog(resource.x, resource.y);
-        }.bind(this));
+                !player.underFog(resource.x, resource.y);
+        });
     };
     
     Field.prototype.nearbyResource = function(player, x, y) {
@@ -231,40 +290,10 @@ var Field = (function() {
         }
     };
 
-    Field.prototype.clearFog = function(x, y, radius) {
-        var tx, ty, current, updated, changed;
-        radius = radius || 1;
-        
-        for (var dy = -radius; dy <= radius; dy++) {
-            for (var dx = -radius; dx <= radius; dx++) {
-                if (Math.sqrt(dx * dx + dy * dy) <= radius) {
-                    tx = x + dx;
-                    ty = y + dy;
-                    if (tx >= 0 && tx < this.size && ty >= 0 && ty < this.size) {
-                        current = this.terrain[ty][tx];
-                        updated = current & ~FOG_OF_WAR_MASK;
-                        changed |= (current != updated);
-                        
-                        this.terrain[ty][tx] = updated;
-                    }
-                }
-            }
-        }
-        
-        if (changed) {
-            this.path.setGrid(this.terrain);
-            this._cachedImage = null;
-        }
-    };
-
-    Field.prototype.underFog = function(x, y) {
-        return (this.terrain[y][x] & FOG_OF_WAR_MASK) !== 0;
-    };
-    
     return Field;
 })();
 
-var Base = (function() {
+uRTS.Base = (function() {
     function Base(player, field) {
         this.player = player;
         this.field = field;
@@ -284,7 +313,7 @@ var Base = (function() {
     return Base;
 })();
 
-var Worker = (function() {
+uRTS.Worker = (function() {
     function Worker(player, field) {
         this.player = player;
         this.field = field;
@@ -301,9 +330,9 @@ var Worker = (function() {
         if (this.atTarget()) {
             this.clearPath();
             
-            if (this.target instanceof Base) {
+            if (this.target instanceof uRTS.Base) {
                 this.deposit(this.target);
-            } else if (this.target instanceof Resource) {
+            } else if (this.target instanceof uRTS.Resource) {
                 if (this.isFull()) {
                     this.search('base');
                 } else {
@@ -343,8 +372,8 @@ var Worker = (function() {
     };
     
     Worker.prototype.consume = function(resource) {
-        var qty;
-        if (qty = resource.consume()) {
+        var qty = resource.consume();
+        if (qty > 0) {
             this.quantity += qty;
         } else {
             this.setTarget(null);
@@ -401,7 +430,7 @@ var Worker = (function() {
     return Worker;
 })();
 
-var Resource = (function() {
+uRTS.Resource = (function() {
     function Resource(field) {
         this.field = field;
         this.quantity = 25;
@@ -445,7 +474,7 @@ var Resource = (function() {
     return Resource;
 })();
 
-var Warrior = (function() {
+uRTS.Warrior = (function() {
     function Warrior(player, field) {
         this.player = player;
         this.field = field;
@@ -456,7 +485,7 @@ var Warrior = (function() {
     }
     
     Warrior.prototype.update = function(dt) {
-        this.field.clearFog(this.x, this.y, 3);
+        this.player.clearFog(this.x, this.y, 3);
         
         if (this.path) {
             this.move();
@@ -497,7 +526,7 @@ var Warrior = (function() {
     return Warrior;
 })();
 
-var game = new Game();
+var game = new uRTS.Game();
 game.run();
 
 document.getElementById('start').addEventListener('click', function() {
@@ -510,6 +539,6 @@ document.getElementById('stop').addEventListener('click', function() {
 
 document.getElementById('reroll').addEventListener('click', function() {
    game.stop();
-   game = new Game();
+   game = new uRTS.Game();
    game.run();
 });
