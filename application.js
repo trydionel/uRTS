@@ -80,7 +80,7 @@ uRTS.FogOfWar = (function() {
     };
     
     FogOfWar.prototype.reveal = function(x, y, radius) {
-        var tx, ty;
+        var tx, ty, current, updated, changed;
         radius = radius || 1;
         
         for (var dy = -radius; dy <= radius; dy++) {
@@ -89,11 +89,17 @@ uRTS.FogOfWar = (function() {
                     tx = x + dx;
                     ty = y + dy;
                     if (tx >= 0 && tx < this.size && ty >= 0 && ty < this.size) {
-                        this.fog[ty][tx] &= ~FOG_MASK;
+                        current = this.fog[ty][tx];
+                        updated = current & ~FOG_MASK;
+                        changed |= (current !== updated);
+                        
+                        this.fog[ty][tx] = updated;
                     }
                 }
             }
         }
+        
+        if (changed) this._cached = null;
     };
     
     FogOfWar.prototype.render = function(context) {
