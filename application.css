@@ -1,0 +1,27 @@
+/* http://nicolasgallagher.com/micro-clearfix-hack/ */
+article:before, article:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+article:after {
+    clear: both;
+}
+
+article {
+    max-width: 1200px;
+}
+
+section {
+    float: left;
+}
+
+section.primary {
+    min-width: 800px;
+    width: 75%;
+    text-align: center;
+}
+
+section.sidebar {
+    width: 25%;
+}
