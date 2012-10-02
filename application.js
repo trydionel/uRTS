@@ -7,6 +7,91 @@ var renderToCanvas = function(width, height, renderFunction) {
     return buffer;
 };
 
+var Brownian = (function() {
+    function Brownian(width, height, octaves, frequency) {
+        this.width = width;
+        this.height = height;
+        this.octaves = octaves;
+        this.frequency = frequency || 1;
+        this.lacunarity = 1.92;
+        this.gain = 0.5;
+    
+        this.simplex = new SimplexNoise();
+    }
+
+    Brownian.prototype.toArray = function() {
+        var row;
+        this.data = [];
+    
+        for (var y = 0; y < this.height; y++) {
+            row = [];
+            for (var x = 0; x < this.width; x++) {
+                row.push(this.noise(x, y));
+            }
+            this.data.push(row);
+        }
+    
+        return this.data;
+    };
+
+    Brownian.prototype.noise = function(x, y) {
+        var sum = 0,
+            freq = 1.0,
+            amp = 1.0,
+            n;
+    
+        for (var i = 0; i < this.octaves; i++) {
+              n = this.simplex.noise(x * freq, y * freq);
+              sum += n*amp;
+              freq *= this.lacunarity;
+              amp *= this.gain;
+        }
+    
+        return sum;
+    };
+
+    return Brownian;
+})();
+
+var kNearestNeighborAverage = function(data, width, height, k) {
+    var out, n, values, sum;
+        
+    out = [];
+    k = k || 2;
+    sum = function(a, b) { return a + b; };
+    
+    for (var y = 0; y < height; y++) out.push([]);
+    
+    for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+            values = [];
+    
+            for (var dy = -k; dy <= k; dy++) {
+                for (var dx = -k; dx <= k; dx++) {
+                    if ((x + dx >= 0) && (x + dx < width) && (y + dy >= 0) && (y + dy < height)) {
+                        n = data[y + dy][x + dx];
+                        values.push(n);
+                    }
+                }
+            }
+    
+            out[y][x] = values.reduce(sum, 0) / values.length;
+        }
+    }
+    
+    return out;
+};
+
+var quantize = function(data, steps) {
+    for (var y = 0; y < data.length; y++) {
+        for (var x = 0; x < data[y].length; x++) {
+            data[y][x] = Math.round(data[y][x] * steps);
+        }
+    }
+    
+    return data;
+};
+
 var uRTS = {};
 uRTS.Game = (function() {
     function Game(options) {
@@ -198,30 +283,12 @@ uRTS.Field = (function() {
     }
     
     Field.prototype.initializeTerrain = function() {
-        var terrain = [];
-        var simplex = new SimplexNoise();
-        var n;
-        
-        // Init empty terrain
-        for (var _i = 0; _i < this.size; _i++) terrain.push([]);
-        
-        // Lay noise into terrain. Double-scale noise for a more
-        // tangible look-n-feel.
-        for (var i = 0; i < this.size / 2.0; i++) {
-            for (var j = 0; j < this.size / 2.0; j++) {
-                n = Math.round(simplex.noise(i, j) + 1);
-                terrain[2 * i][2 * j] = n;
-                terrain[2 * i + 1][2 * j] = n;
-                terrain[2 * i][2 * j + 1] = n;
-                terrain[2 * i + 1][2 * j + 1] = n;
-            }
-        }
-        
-        this.terrain = terrain;
+        var brownian = new Brownian(this.size, this.size, 6);
+        this.terrain = quantize(kNearestNeighborAverage(brownian.toArray(), this.size, this.size, 2), 5);
     };
     
     Field.prototype.initializePath = function() {
-        this.path = new EasyStar.js([1], this.onPathComplete.bind(this));
+        this.path = new EasyStar.js([0], this.onPathComplete.bind(this));
         this.path.setGrid(this.terrain);
     };
     
@@ -256,7 +323,7 @@ uRTS.Field = (function() {
             var color, lum;
             this.terrain.forEach(function(row, y) {
                 row.forEach(function(height, x) {
-                    lum = 10 + (1 + height) / 8.0 * 100;
+                    lum = 20 + (1 + height) / 8.0 * 100;
                     color = 'hsl(90, 60%, ' + lum + '%)';
     
                     buffer.fillStyle = color;
@@ -295,7 +362,6 @@ uRTS.Field = (function() {
             this.path.calculate();
             return this._lastPath;
         } catch(e) {
-            console.log(e);
             return null;
         }
     };
