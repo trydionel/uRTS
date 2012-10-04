@@ -15,14 +15,14 @@ var Brownian = (function() {
         this.frequency = frequency || 1;
         this.lacunarity = 1.92;
         this.gain = 0.5;
-    
+
         this.simplex = new SimplexNoise();
     }
 
     Brownian.prototype.toArray = function() {
         var row;
         this.data = [];
-    
+
         for (var y = 0; y < this.height; y++) {
             row = [];
             for (var x = 0; x < this.width; x++) {
@@ -30,7 +30,7 @@ var Brownian = (function() {
             }
             this.data.push(row);
         }
-    
+
         return this.data;
     };
 
@@ -39,14 +39,14 @@ var Brownian = (function() {
             freq = 1.0,
             amp = 1.0,
             n;
-    
+
         for (var i = 0; i < this.octaves; i++) {
               n = this.simplex.noise(x * freq, y * freq);
               sum += n*amp;
               freq *= this.lacunarity;
               amp *= this.gain;
         }
-    
+
         return sum;
     };
 
@@ -55,17 +55,17 @@ var Brownian = (function() {
 
 var kNearestNeighborAverage = function(data, width, height, k) {
     var out, n, values, sum;
-        
+
     out = [];
     k = k || 2;
     sum = function(a, b) { return a + b; };
-    
+
     for (var y = 0; y < height; y++) out.push([]);
-    
+
     for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
             values = [];
-    
+
             for (var dy = -k; dy <= k; dy++) {
                 for (var dx = -k; dx <= k; dx++) {
                     if ((x + dx >= 0) && (x + dx < width) && (y + dy >= 0) && (y + dy < height)) {
@@ -74,11 +74,11 @@ var kNearestNeighborAverage = function(data, width, height, k) {
                     }
                 }
             }
-    
+
             out[y][x] = values.reduce(sum, 0) / values.length;
         }
     }
-    
+
     return out;
 };
 
@@ -88,7 +88,7 @@ var quantize = function(data, steps) {
             data[y][x] = Math.round(data[y][x] * steps);
         }
     }
-    
+
     return data;
 };
 
@@ -106,49 +106,51 @@ uRTS.Game = (function() {
 
         this.entities = [this.field, this.players[1], this.players[0]];
     }
-    
+
     Game.prototype.update = function(dt) {
         this.entities.forEach(function(entity) {
             entity.update(dt);
         });
     };
-    
+
     Game.prototype.render = function(context) {
         this.entities.forEach(function(entity) {
             entity.render(context);
         });
     };
-    
+
     Game.prototype.run = function() {
         this.playing = true;
-        
+
+        var t0 = +new Date() - 16;
         var game = this;
-        var render = function(dt) {
+        var render = function() {
             if (game.playing) webkitRequestAnimationFrame(render);
             game.render(game.context);
         };
         render();
-        
-        var logic = function(dt) {
+
+        var logic = function() {
+            var dt = +new Date() - t0;
             game.update(dt);
             if (game.playing) setTimeout(logic, 200); // 5fps
         };
-        logic(); 
+        logic();
     };
-    
+
     Game.prototype.stop = function() {
         this.playing = false;
     };
-    
+
     return Game;
 })();
 
 uRTS.FogOfWar = (function() {
     var FOG_MASK = 1;
-    
+
     function FogOfWar(size) {
         this.size = size;
-        
+
         var row, fog = [];
         for (var j = 0; j < this.size; j++) {
             row = [];
@@ -159,15 +161,15 @@ uRTS.FogOfWar = (function() {
         }
         this.fog = fog;
     }
-    
+
     FogOfWar.prototype.presentAt = function(x, y) {
         return this.fog[y][x] === FOG_MASK;
     };
-    
+
     FogOfWar.prototype.reveal = function(x, y, radius) {
         var tx, ty, current, updated, changed;
         radius = radius || 1;
-        
+
         for (var dy = -radius; dy <= radius; dy++) {
             for (var dx = -radius; dx <= radius; dx++) {
                 if (Math.sqrt(dx * dx + dy * dy) <= radius) {
@@ -177,21 +179,21 @@ uRTS.FogOfWar = (function() {
                         current = this.fog[ty][tx];
                         updated = current & ~FOG_MASK;
                         changed |= (current !== updated);
-                        
+
                         this.fog[ty][tx] = updated;
                     }
                 }
             }
         }
-        
+
         if (changed) this._cached = null;
     };
-    
+
     FogOfWar.prototype.render = function(context) {
         this._cached = this._cached || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
             var size = buffer.canvas.width / this.size;
             buffer.fillStyle = 'darkgray';
-            
+
             for (var y = 0; y < this.size; y++) {
                 for (var x = 0; x < this.size; x++) {
                     if (this.presentAt(x, y)) {
@@ -200,74 +202,80 @@ uRTS.FogOfWar = (function() {
                 }
             }
         }.bind(this));
-        
+
         context.drawImage(this._cached, 0, 0);
     };
-    
+
     return FogOfWar;
 })();
 
 uRTS.Player = (function() {
     function Player(color, field, options) {
         options = options || {};
-        
+
         this.color = color;
         this.field = field;
         this.human = options.human;
         this.entities = [];
         this.fog = new uRTS.FogOfWar(this.field.size);
-        
+
         this.initializeBase();
         this.initializeWorkers(3);
         this.initializeWarriors(1);
     }
-    
+
     Player.prototype.initializeBase = function() {
-        this.base = new uRTS.Base(this, this.field);
+        var x = Math.floor(Math.random() * (this.field.size - 4)) + 2;
+        var y = Math.floor(Math.random() * (this.field.size - 4)) + 2;
+        this.base = createBase(this.field, this, x, y);
         this.entities.push(this.base);
 
         // Create opening in fog-of-war around the base
-        this.clearFog(this.base.x, this.base.y, 6);
+        this.clearFog(x, y, 6);
     };
 
     Player.prototype.initializeWorkers = function(n) {
-        var worker;        
+        var worker, x, y, position = this.base.getComponent('Transform');
         for (var i = 0; i < n; i++) {
-            worker = new uRTS.Worker(this, this.field);
+            x = position.x + Math.floor(Math.random() * 4 - 2);
+            y = position.y + Math.floor(Math.random() * 4 - 2);
+            worker = createWorker(this.field, this, x, y);
             this.entities.push(worker);
-        }        
+        }
     };
-    
+
     Player.prototype.initializeWarriors = function(n) {
-        var warrior;        
+        var warrior, x, y, position = this.base.getComponent('Transform');
         for (var i = 0; i < n; i++) {
-            warrior = new uRTS.Warrior(this, this.field);
+            x = position.x + Math.floor(Math.random() * 4 - 2);
+            y = position.y + Math.floor(Math.random() * 4 - 2);
+            warrior = createWarrior(this.field, this, x, y);
             this.entities.push(warrior);
-        }        
+        }
     };
-    
+
     Player.prototype.update = function(dt) {
         this.entities.forEach(function(entity) {
             entity.update(dt);
         });
     };
-    
+
     Player.prototype.render = function(context) {
         this.entities.forEach(function(entity) {
             entity.render(context);
         });
         if (this.human) this.fog.render(context);
     };
-        
+
 
     Player.prototype.underFog = function(x, y) {
         return this.fog.presentAt(x, y);
     };
-    
+
     Player.prototype.clearFog = function(x, y, radius) {
         this.fog.reveal(x, y, radius);
     };
-    
+
     return Player;
 })();
 
@@ -276,47 +284,49 @@ uRTS.Field = (function() {
         this.size = size;
         this.entities = [];
         this.terrain = [];
-        
+
         this.initializeTerrain();
         this.initializePath();
         this.initializeResources(Math.sqrt(2 * this.size));
     }
-    
+
     Field.prototype.initializeTerrain = function() {
         var brownian = new Brownian(this.size, this.size, 6);
         this.terrain = quantize(kNearestNeighborAverage(brownian.toArray(), this.size, this.size, 2), 5);
     };
-    
+
     Field.prototype.initializePath = function() {
         this.path = new EasyStar.js([0], this.onPathComplete.bind(this));
         this.path.setGrid(this.terrain);
     };
-    
+
     Field.prototype.initializeResources = function(n) {
-        var resource;
-        
+        var resource, x, y;
+
         // Keep an index of resources for faster lookups
         this.resources = [];
         for (var i = 0; i < n; i++) {
-            resource = new uRTS.Resource(this);
+            x = Math.floor(Math.random() * this.size);
+            y = Math.floor(Math.random() * this.size);
+            resource = createResource(this, x, y); //new uRTS.Resource(this);
             this.resources.push(resource);
             this.entities.push(resource);
         }
     };
-    
+
     Field.prototype.update = function(dt) {
         this.entities.forEach(function(entity) {
             entity.update(dt);
         });
     };
-    
+
     Field.prototype.render = function(context) {
         this.renderSelf(context);
         this.entities.forEach(function(entity) {
             entity.render(context);
         });
     };
-    
+
     Field.prototype.renderSelf = function(context) {
         this._cachedImage = this._cachedImage || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
             var size = context.canvas.width / this.size;
@@ -325,7 +335,7 @@ uRTS.Field = (function() {
                 row.forEach(function(height, x) {
                     lum = 20 + (1 + height) / 8.0 * 100;
                     color = 'hsl(90, 60%, ' + lum + '%)';
-    
+
                     buffer.fillStyle = color;
                     buffer.fillRect(size * x, size * y, size, size);
                 });
@@ -333,14 +343,15 @@ uRTS.Field = (function() {
         }.bind(this));
         context.drawImage(this._cachedImage, 0, 0);
     };
-    
+
     Field.prototype.availableResources = function(player) {
         return this.resources.filter(function(resource) {
-            return resource.isAvailable(player) &&
-                !player.underFog(resource.x, resource.y);
+            var storage  = resource.getComponent('Storage');
+            var position = resource.getComponent('Transform');
+            return !storage.isEmpty() && !player.underFog(position.x, position.y);
         });
     };
-    
+
     Field.prototype.nearbyResource = function(player, x, y) {
         var available = this.availableResources(player);
         var manhattan = function(x1, y1, x2, y2) {
@@ -351,11 +362,11 @@ uRTS.Field = (function() {
         });
         return available[0];
     };
-    
+
     Field.prototype.onPathComplete = function(path) {
         this._lastPath = path;
     };
-    
+
     Field.prototype.search = function(sx, sy, fx, fy, callback) {
         try {
             this.path.setPath(sx, sy, fx, fy);
@@ -369,238 +380,426 @@ uRTS.Field = (function() {
     return Field;
 })();
 
-uRTS.Base = (function() {
-    function Base(player, field) {
-        this.player = player;
-        this.field = field;
-        this.x = Math.floor(Math.random() * field.size);
-        this.y = Math.floor(Math.random() * field.size);
-        this.quantity = 0;
+uRTS.Entity = (function() {
+    function Entity() {
+        this.components = [];
+        this.view = null;
+        this.tag = null;
     }
-    
-    Base.prototype.update = function(dt) {};
-    
-    Base.prototype.render = function(context) {
-        var size = context.canvas.width / this.field.size;
-        context.fillStyle = this.player.color;
-        context.fillRect(size * (this.x - 1), size * (this.y - 1), 3 * size, 3 * size);
+
+    Entity.prototype.addComponent = function(component) {
+        component.entity = this;
+        this.components.push(component);
     };
-    
-    return Base;
+
+    Entity.prototype.getComponent = function(name) {
+        var found = this.components.filter(function(component) {
+            return component.constructor.name == name;
+        });
+        return found[0];
+    };
+
+    Entity.prototype.removeComponent = function(component) {
+        if (component.entity === this) {
+            component.entity = null;
+            this.components.splice(this.components.indexOf(component));
+        }
+    };
+
+    Entity.prototype.broadcast = function(message, data) {
+        console.log(this, message, data);
+        var method = "on" + message;
+        this.components.forEach(function(component) {
+            if (component[method]) {
+                component[method](data);
+            }
+        });
+    };
+
+    Entity.prototype.setTag = function(tag) {
+        this.tag = tag;
+    };
+
+    Entity.prototype.setView = function(view) {
+        this.view = view;
+    };
+
+    Entity.prototype.update = function(dt) {
+        this.components.forEach(function(component) {
+            if (component.update) {
+                component.update(this, dt);
+            }
+        }.bind(this));
+    };
+
+    Entity.prototype.render = function(context) {
+        this.view.render(this, context);
+    };
+
+    return Entity;
 })();
 
-uRTS.Worker = (function() {
-    function Worker(player, field) {
-        this.player = player;
-        this.field = field;
-        this.x = this.player.base.x + Math.floor(Math.random() * 4 - 2);
-        this.y = this.player.base.y + Math.floor(Math.random() * 4 - 2);
-        this.quantity = 0;
-        this.capacity = 10;
-        this.path = null;
-        this.pathIndex = 0;
+
+var Transform = (function() {
+    function Transform(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    return Transform;
+})();
+
+var MovementSystem = (function() {
+    var EPSILON = 0.01;
+
+    function MovementSystem(speed) {
+        this.speed = 1; //speed;
+        this.direction = { x: 0, y: 0 };
         this.target = null;
     }
-    
-    Worker.prototype.update = function(dt) {
-        if (this.atTarget()) {
-            this.clearPath();
-            
-            if (this.target instanceof uRTS.Base) {
-                this.deposit(this.target);
-            } else if (this.target instanceof uRTS.Resource) {
-                if (this.isFull()) {
-                    this.search('base');
-                } else {
-                    this.consume(this.target);
-                }
-            }
-        } else if (this.path) {
-            this.move();
-        } else {
-            this.search('resource');
-            
-            // Return home if no resources left
-            if (!this.target) {
-                console.log("No resources found. Returning to base.");
-                this.search('base');
-            }
-        }
+
+    MovementSystem.prototype.isMoving = function() {
+        return this.direction.x !== 0 && this.direction.y !== 0;
     };
-    
-    Worker.prototype.isFull = function() {
-        return this.quantity >= this.capacity;
+
+    MovementSystem.prototype.move = function(direction) {
+        this.direction = direction;
     };
-    
-    Worker.prototype.atTarget = function() {
+
+    MovementSystem.prototype.moveTo = function(target) {
+        var position = this.entity.getComponent('Transform');
+
+        this.target = target;
+        this.move({
+            x: target.x - position.x,
+            y: target.y - position.y
+        });
+    };
+
+    MovementSystem.prototype.atTarget = function() {
+        var position = this.entity.getComponent('Transform');
+        //var distance = Math.sqrt(Math.pow(position.x - this.target.x, 2) + Math.pow(position.y - this.target.y, 2));
         return this.target &&
-            Math.abs(this.target.x - this.x) <= 1 &&
-            Math.abs(this.target.y - this.y) <= 1;
+            Math.abs(this.target.x - position.x) <= 1 &&
+            Math.abs(this.target.y - position.y) <= 1;
     };
-    
-    Worker.prototype.deposit = function(base) {
-        if (this.quantity > 0) {
-            this.quantity -= 1;
-            base.quantity += 1;
-        } else {
-            this.setTarget(null);
+
+    MovementSystem.prototype.update = function(entity, dt) {
+        var position = this.entity.getComponent('Transform');
+
+        position.x += this.direction.x;
+        position.y += this.direction.y;
+
+        if (this.atTarget()) {
+            this.target = null;
+            this.move({ x: 0, y: 0 });
+            this.entity.broadcast('TargetReached');
         }
     };
-    
-    Worker.prototype.consume = function(resource) {
-        var qty = resource.consume();
-        if (qty > 0) {
-            this.quantity += qty;
-        } else {
-            this.setTarget(null);
-        }
-    };
-    
-    Worker.prototype.move = function() {
-        if (!this.path) return;
-        
-        this.x = this.path[this.pathIndex].x;
-        this.y = this.path[this.pathIndex].y;
-        this.pathIndex++;
-      
-        if (this.pathIndex >= this.path.length) {
-            this.clearPath();
-        }
-    };
-    
-    Worker.prototype.search = function(tag) {
-        if (tag === 'resource') {
-            this.setTarget(this.field.nearbyResource(this.player, this.x, this.y));
-        } else if (tag === 'base') {
-            this.setTarget(this.player.base);
+
+    return MovementSystem;
+})();
+
+var Team = (function() {
+    function Team(color) {
+        this.color = color;
+    }
+
+    return Team;
+})();
+
+var CellView = (function() {
+    function CellView (color, size) {
+        this.color  = color;
+        this.size   = size || 1;
+        this.offset = Math.floor(this.size / 2.0);
+    }
+
+    CellView.prototype.render = function(entity, context) {
+        var scale = context.canvas.width / entity.field.size;
+        var position = entity.getComponent('Transform');
+        var team = entity.getComponent('Team');
+        var storage = entity.getComponent('Storage');
+        var x, y, w, h, capacity;
+
+        if (!position) throw 'MissingComponent: CellView requires a Position component.';
+        x = scale * (position.x - this.offset);
+        y = scale * (position.y - this.offset);
+        w = scale * this.size;
+        h = scale * this.size;
+
+        context.fillStyle = this.color;
+        context.fillRect(x, y, w, h);
+
+        if (team) {
+            context.fillStyle = team.color;
+            context.fillRect(x, y + h - 2, w, 2);
         }
 
+        if (storage) {
+            capacity = storage.quantity / storage.capacity;
+
+            context.fillStyle = 'white';
+            context.fillRect(x, y, w, 2);
+
+            context.fillStyle = 'red';
+            context.fillRect(x, y, capacity * w, 2);
+        }
+    };
+
+    return CellView;
+})();
+
+var Pathfinding = (function() {
+    function Pathfinding() {
+        this.target = null;
+        this.path = null;
+        this.pathIndex = 0;
+    }
+
+    Pathfinding.prototype.search = function(target) {
+        var position = this.entity.getComponent('Transform');
+
+        this.setTarget(target);
         if (this.target) {
-            this.path = this.field.search(this.x, this.y, this.target.x, this.target.y);
+            this.path = this.entity.field.search(position.x, position.y, this.target.x, this.target.y);
             this.pathIndex = 0;
         }
     };
-    
-    Worker.prototype.setTarget = function(target) {
+
+    Pathfinding.prototype.move = function() {
+        if (!this.path) return;
+
+        var motor = this.entity.getComponent('MovementSystem');
+        if (!motor.isMoving()) {
+            var x = this.path[this.pathIndex].x;
+            var y = this.path[this.pathIndex].y;
+            motor.moveTo({ x: x, y: y });
+        }
+    };
+
+    Pathfinding.prototype.isPathing = function() {
+        return !!this.path;
+    };
+
+    Pathfinding.prototype.setTarget = function(target) {
         if (this.target) this.target.occupied = null;
         this.target = target;
         if (this.target) this.target.occupied = this.player;
     };
-    
-    Worker.prototype.clearPath = function() {
+
+    Pathfinding.prototype.clearPath = function() {
         this.path = null;
         this.pathIndex = 0;
     };
-            
-    Worker.prototype.render = function(context) {
-        var size = context.canvas.width / this.field.size;
-        context.fillStyle = 'dark' + this.player.color;
-        context.fillRect(size * this.x, size * this.y, size, size);
-        
-        var capacity = this.quantity / this.capacity;
-        context.fillStyle = 'yellow';
-        context.fillRect(size * this.x, size * this.y, size * capacity, 2);
 
-    };
-    
-    return Worker;
-})();
-
-uRTS.Resource = (function() {
-    function Resource(field) {
-        this.field = field;
-        this.quantity = 25;
-        this.maxQuantity = 25;
-        this.x = Math.floor(Math.random() * field.size);
-        this.y = Math.floor(Math.random() * field.size);
-        this.occupied = false;
-    }
-    
-    Resource.prototype.update = function(dt) {
-        // Slowly regrow resources
-        if (Math.random() > 0.99) {
-            this.quantity += 0.2 * this.maxQuantity;
-            this.quantity = Math.min(this.maxQuantity, this.quantity);
+    Pathfinding.prototype.onTargetReached = function() {
+        this.pathIndex++;
+        if (this.pathIndex >= this.path.length) {
+            this.entity.broadcast('PathComplete');
         }
     };
-        
-    Resource.prototype.render = function(context) {
-        var size = context.canvas.width / this.field.size;
-        context.fillStyle = 'white';
-        context.fillRect(size * this.x, size * this.y, size, size);
-        
-        var remaining = this.quantity / this.maxQuantity;
-        context.fillStyle = 'red';
-        context.fillRect(size * this.x, size * this.y, size * remaining, 2);
+
+    Pathfinding.prototype.onPathComplete = function() {
+        this.clearPath();
     };
-    
-    Resource.prototype.isAvailable = function(player) {
-        return this.quantity > (0.6 * this.maxQuantity) &&
-            this.occupied !== player;
+
+    return Pathfinding;
+})();
+
+var WorkerAI = (function() {
+    function WorkerAI() {
+        this.target = null;
+    }
+
+    WorkerAI.prototype.onEmpty = function() {
+        this.target = null;
     };
-    
-    Resource.prototype.consume = function() {
-        if (this.quantity > 0) {
+
+    WorkerAI.prototype.onResourceExhausted = function(resource) {
+        if (this.target === resource) {
+            this.target = null;
+        }
+    };
+
+    WorkerAI.prototype.search = function(tag) {
+        var position = this.entity.getComponent('Transform');
+        var path     = this.entity.getComponent('Pathfinding');
+
+        if (tag === 'resource') {
+            this.target = this.entity.field.nearbyResource(this.entity.player, position.x, position.y);
+        } else if (tag === 'base') {
+            this.target = this.entity.player.base;
+        }
+
+        if (this.target) {
+            path.search(this.target.getComponent('Transform'));
+        }
+    };
+
+    WorkerAI.prototype.atTarget = function() {
+        if (!this.target) return;
+
+        var position = this.entity.getComponent('Transform');
+        var destination = this.target.getComponent('Transform');
+
+        return Math.abs(destination.x - position.x) <= 1 &&
+            Math.abs(destination.y - position.y) <= 1;
+    };
+
+
+    WorkerAI.prototype.update = function(entity, dt) {
+        var path    = this.entity.getComponent('Pathfinding');
+        var storage = this.entity.getComponent('Storage');
+
+        if (this.atTarget()) {
+            path.clearPath();
+
+            if (this.target.tag === 'Base') {
+                storage.deposit(this.target);
+            } else if (this.target.tag === 'Resource') {
+                if (storage.isFull()) {
+                    this.search('base');
+                } else {
+                    storage.consume(this.target);
+                }
+            }
+        } else if (path.isPathing()) {
+            path.move();
+        } else {
+            this.search('resource');
+
+            // Return home if no resources left
+            if (!this.target) {
+                this.search('base');
+            }
+        }
+    };
+
+    return WorkerAI;
+})();
+
+var Storage = (function() {
+    function Storage(capacity, initial) {
+        this.capacity = capacity;
+        this.quantity = initial;
+    }
+
+    Storage.prototype.isFull = function() {
+        return this.quantity >= this.capacity;
+    };
+
+    Storage.prototype.isEmpty = function() {
+        return this.quantity <= 0;
+    };
+
+    Storage.prototype.deposit = function(other) {
+        var destination = other.getComponent('Storage');
+        if (!destination) throw "Attempting to deposit into entity without storage component";
+
+        if (this.isEmpty()) {
+            this.entity.broadcast('Empty');
+        } else {
             this.quantity -= 1;
-            return 1;
+            destination.quantity += 1;
         }
-        return 0;
     };
 
-    return Resource;
+    Storage.prototype.consume = function(other) {
+        var source = other.getComponent('Storage');
+        if (!source) throw "Attempting to consume from entity without storage component";
+
+        if (this.isFull()) {
+            this.entity.broadcast('Full');
+        } else if (source.isEmpty()) {
+            this.entity.broadcast('ResourceExhausted', source.entity);
+        } else {
+            source.deposit(this.entity);
+        }
+    };
+
+    return Storage;
 })();
 
-uRTS.Warrior = (function() {
-    function Warrior(player, field) {
-        this.player = player;
-        this.field = field;
-        this.x = this.player.base.x + Math.floor(Math.random() * 4 - 2);
-        this.y = this.player.base.y + Math.floor(Math.random() * 4 - 2);
-        this.path = null;
-        this.pathIndex = 0;
+var WarriorAI = (function() {
+    function WarriorAI() {
     }
-    
-    Warrior.prototype.update = function(dt) {
-        this.player.clearFog(this.x, this.y, 3);
-        
-        if (this.path) {
-            this.move();
+
+    WarriorAI.prototype.update = function(entity, dt) {
+        var position = this.entity.getComponent('Transform');
+        var path     = this.entity.getComponent('Pathfinding');
+
+        this.entity.player.clearFog(position.x, position.y, 3);
+
+        if (path.isPathing()) {
+            path.move();
         } else {
             this.explore();
         }
     };
-    
-    Warrior.prototype.move = function() {
-        if (!this.path) return;
-        
-        this.x = this.path[this.pathIndex].x;
-        this.y = this.path[this.pathIndex].y;
-        this.pathIndex++;
-      
-        if (this.pathIndex >= this.path.length) {
-            this.clearPath();
-        }
+
+    WarriorAI.prototype.explore = function() {
+        var position = this.entity.getComponent('Transform');
+        var path     = this.entity.getComponent('Pathfinding');
+
+        var destX = position.x + Math.round(Math.random() * 10 - 5);
+        var destY = position.y + Math.round(Math.random() * 10 - 5);
+        path.path = this.entity.field.search(position.x, position.y, destX, destY);
     };
 
-    Warrior.prototype.clearPath = function() {
-        this.path = null;
-        this.pathIndex = 0;
-    };
-    
-    Warrior.prototype.explore = function() {
-        var destX = this.x + Math.round(Math.random() * 10 - 5);
-        var destY = this.y + Math.round(Math.random() * 10 - 5);
-        this.path = this.field.search(this.x, this.y, destX, destY);
-    };
-    
-    Warrior.prototype.render = function(context) {
-        var size = context.canvas.width / this.field.size;
-        context.fillStyle = 'light' + this.player.color;
-        context.fillRect(size * this.x, size * this.y, size, size);
-    };
-    
-    return Warrior;
+    return WarriorAI;
 })();
+
+function createWorker(field, player, x, y) {
+    var worker = new uRTS.Entity();
+    worker.field = field; // FIXME
+    worker.player = player;
+    worker.setTag('Worker');
+    worker.addComponent(new Transform(x, y));
+    worker.addComponent(new MovementSystem(1));
+    worker.addComponent(new Pathfinding());
+    worker.addComponent(new Team(player.color));
+    worker.addComponent(new Storage(10, 0));
+    worker.addComponent(new WorkerAI());
+    worker.setView(new CellView('#999'));
+    return worker;
+}
+
+function createBase(field, player, x, y) {
+    var base = new uRTS.Entity();
+    base.field = field; // FIXME
+    base.player = player;
+    base.setTag('Base');
+    base.addComponent(new Transform(x, y));
+    base.addComponent(new Team(player.color));
+    base.addComponent(new Storage(Infinity, 0));
+    base.setView(new CellView('#333', 3));
+    return base;
+}
+
+function createResource(field, x, y) {
+    var base = new uRTS.Entity();
+    base.field = field; // FIXME
+    base.setTag('Resource');
+    base.addComponent(new Transform(x, y));
+    base.addComponent(new Storage(25, 25));
+    base.setView(new CellView('#fff'));
+    return base;
+}
+
+function createWarrior(field, player, x, y) {
+    var worker = new uRTS.Entity();
+    worker.field = field; // FIXME
+    worker.player = player;
+    worker.setTag('Warrior');
+    worker.addComponent(new Transform(x, y));
+    worker.addComponent(new MovementSystem(1));
+    worker.addComponent(new Pathfinding());
+    worker.addComponent(new Team(player.color));
+    worker.addComponent(new WarriorAI());
+    worker.setView(new CellView('#e88'));
+    return worker;
+}
 
 var game = new uRTS.Game();
 game.run();
