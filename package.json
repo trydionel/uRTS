@@ -1,0 +1,8 @@
+{
+  "volo": {
+    "baseDir": "lib",
+    "dependencies": {
+      "require": "github:jrburke/requirejs/2.1.0"
+    }
+  }
+}
