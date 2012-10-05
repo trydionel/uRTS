@@ -8,6 +8,7 @@ define(function(require) {
     var Storage = require('components/storage');
     var WorkerAI = require('components/workerAI');
     var WarriorAI = require('components/warriorAI');
+    var ResourceAI = require('components/resourceAI');
     
     var CellView = require('views/cellView');
     
@@ -44,6 +45,7 @@ define(function(require) {
         entity.setTag('Resource');
         entity.addComponent(new Transform(x, y));
         entity.addComponent(new Storage(25, 25));
+        entity.addComponent(new ResourceAI());
         entity.setView(new CellView('#fff'));
         return entity;
     }
