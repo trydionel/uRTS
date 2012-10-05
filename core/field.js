@@ -1,11 +1,11 @@
 define(function(require) {
     var Factory = require('core/factory');
-    
+
     var Brownian = require('util/brownian');
     var kNearestNeighborAverage = require('util/kNearestNeighborAverage');
     var quantize = require('util/quantize');
     var renderToCanvas = require('util/renderToCanvas');
-    
+
     function Field(size) {
         this.size = size;
         this.entities = [];
@@ -13,7 +13,7 @@ define(function(require) {
 
         this.initializeTerrain();
         this.initializePath();
-        this.initializeResources(Math.sqrt(2 * this.size));
+        this.initializeResources(2 * Math.sqrt(this.size));
     }
 
     Field.prototype.initializeTerrain = function() {

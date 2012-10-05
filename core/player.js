@@ -1,7 +1,7 @@
 define(function(require) {
     var FogOfWar = require('core/fogOfWar');
     var Factory = require('core/factory');
-    
+
     function Player(color, field, options) {
         options = options || {};
 
@@ -66,6 +66,17 @@ define(function(require) {
 
     Player.prototype.clearFog = function(x, y, radius) {
         this.fog.reveal(x, y, radius);
+    };
+
+    Player.prototype.unitsInBB = function(x, y, w, h) {
+        return this.entities.filter(function(entity) {
+            var position = entity.getComponent('Transform');
+
+            return (position.x >= x) &&
+                (position.x < x + w) &&
+                (position.y >= y) &&
+                (position.y < y + h);
+        });
     };
 
     return Player;

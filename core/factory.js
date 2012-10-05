@@ -1,6 +1,6 @@
 define(function(require) {
     var Entity = require('core/entity');
-    
+
     var Transform = require('components/transform');
     var MovementSystem = require('components/movementSystem');
     var Pathfinding = require('components/pathfinding');
@@ -9,9 +9,9 @@ define(function(require) {
     var WorkerAI = require('components/workerAI');
     var WarriorAI = require('components/warriorAI');
     var ResourceAI = require('components/resourceAI');
-    
+
     var CellView = require('views/cellView');
-    
+
     function createWorker(field, player, x, y) {
         var entity = new Entity();
         entity.field = field; // FIXME
@@ -26,7 +26,7 @@ define(function(require) {
         entity.setView(new CellView('#999'));
         return entity;
     }
-    
+
     function createBase(field, player, x, y) {
         var entity = new Entity();
         entity.field = field; // FIXME
@@ -38,7 +38,7 @@ define(function(require) {
         entity.setView(new CellView('#333', 3));
         return entity;
     }
-    
+
     function createResource(field, x, y) {
         var entity = new Entity();
         entity.field = field; // FIXME
@@ -49,7 +49,7 @@ define(function(require) {
         entity.setView(new CellView('#fff'));
         return entity;
     }
-    
+
     function createWarrior(field, player, x, y) {
         var entity = new Entity();
         entity.field = field; // FIXME
@@ -63,7 +63,7 @@ define(function(require) {
         entity.setView(new CellView('#e88'));
         return entity;
     }
-    
+
     return {
         worker: createWorker,
         warrior: createWarrior,

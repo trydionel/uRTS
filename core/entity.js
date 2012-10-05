@@ -25,7 +25,6 @@ define(function(require) {
     };
 
     Entity.prototype.broadcast = function(message, data) {
-        console.log(this, message, data);
         var method = "on" + message;
         this.components.forEach(function(component) {
             if (component[method]) {
