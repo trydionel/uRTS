@@ -46,10 +46,10 @@ define(function(require) {
         });
     };
 
-    Field.prototype.render = function(context) {
+    Field.prototype.render = function(context, dt, elapsed) {
         this.renderSelf(context);
         this.entities.forEach(function(entity) {
-            entity.render(context);
+            entity.render(context, dt, elapsed);
         });
     };
 

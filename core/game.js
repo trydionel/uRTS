@@ -15,6 +15,8 @@ define(function(require) {
 
         this.entities = [this.field, this.players[1], this.players[0]];
 
+        // FIXME: Need to tear down these bindings somewhere so reroll will
+        // work properly.
         this.canvas.addEventListener("mousedown", this.startSelect.bind(this));
         this.canvas.addEventListener("mousemove", this.updateSelect.bind(this));
         this.canvas.addEventListener("mouseup", this.stopSelect.bind(this));
@@ -26,9 +28,9 @@ define(function(require) {
         });
     };
 
-    Game.prototype.render = function(context) {
+    Game.prototype.render = function(context, dt, elapsed) {
         this.entities.forEach(function(entity) {
-            entity.render(context);
+            entity.render(context, dt, elapsed);
         });
         this.renderSelect(context);
     };
@@ -84,16 +86,23 @@ define(function(require) {
 
         var t0 = +new Date() - 16;
         var game = this;
-        var render = function() {
+        var logicRate = 200; // 5fps
+        var lastLogicTick;
+
+        var render = function(t) {
+            var dt = t - t0;
+            var elapsed = (t - lastLogicTick) / logicRate;
             if (game.playing) webkitRequestAnimationFrame(render);
-            game.render(game.context);
+            game.render(game.context, dt, elapsed);
         };
-        render();
+        render(16);
 
         var logic = function() {
-            var dt = +new Date() - t0;
+            var dt;
+            lastLogicTick = +new Date();
+            dt = lastLogicTick - t0;
             game.update(dt);
-            if (game.playing) setTimeout(logic, 200); // 5fps
+            if (game.playing) setTimeout(logic, logicRate);
         };
         logic();
     };

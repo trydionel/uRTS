@@ -49,8 +49,8 @@ define(function(require) {
         }.bind(this));
     };
 
-    Entity.prototype.render = function(context) {
-        this.view.render(this, context);
+    Entity.prototype.render = function(context, dt, elapsed) {
+        this.view.render(this, context, dt, elapsed);
     };
 
     return Entity;

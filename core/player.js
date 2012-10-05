@@ -52,9 +52,9 @@ define(function(require) {
         });
     };
 
-    Player.prototype.render = function(context) {
+    Player.prototype.render = function(context, dt, elapsed) {
         this.entities.forEach(function(entity) {
-            entity.render(context);
+            entity.render(context, dt, elapsed);
         });
         if (this.human) this.fog.render(context);
     };

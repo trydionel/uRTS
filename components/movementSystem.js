@@ -35,9 +35,10 @@ define(function() {
 
     MovementSystem.prototype.update = function(entity, dt) {
         var position = this.entity.getComponent('Transform');
+        var x = position.x + this.direction.x;
+        var y = position.y + this.direction.y;
 
-        position.x += this.direction.x;
-        position.y += this.direction.y;
+        position.set(x, y);
 
         if (this.atTarget()) {
             this.target = null;
