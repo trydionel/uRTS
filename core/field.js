@@ -86,7 +86,7 @@ define(function(require) {
         available.sort(function(a, b) {
             return manhattan(a.x, a.y, x, y) - manhattan(b.x, b.y, x, y);
         });
-        return available[0];
+        return available[Math.floor(Math.random() * available.length)];
     };
 
     Field.prototype.onPathComplete = function(path) {
