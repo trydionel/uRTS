@@ -1,8 +1,11 @@
 {
   "volo": {
     "baseDir": "lib",
+    "amd": {},
     "dependencies": {
-      "require": "github:jrburke/requirejs/2.1.0"
+      "require": "github:jrburke/requirejs/2.1.0",
+      "machina": "github:ifandelse/machina.js/v0.2.0#lib/browser/machina.js",
+      "underscore": "github:amdjs/underscore/1.4.1"
     }
   }
 }

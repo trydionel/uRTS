@@ -1,21 +1,64 @@
-define(function() {
+define(function(require) {
+    var machina = require('lib/machina');
+
     function WorkerAI() {
+        var ai = this;
+
         this.target = null;
+        this.fsm = new machina.Fsm({
+            initialState: 'idle',
+            states: {
+                'idle': {
+                    'update': function(entity) {
+                        ai.search('resource');
+                        if (!ai.target) {
+                            ai.search('base');
+                        }
+                    }
+                },
+                'moving': {
+                    'update': function(entity) {
+                        var path = entity.getComponent('Pathfinding');
+
+                        path.move();
+                        if (ai.atTarget()) {
+                            this.transition('interacting');
+                        }
+                    }
+                },
+                'interacting': {
+                    'update': function(entity) {
+                        var storage = entity.getComponent('Storage');
+
+                        if (ai.target.tag === 'Resource') {
+                            storage.consume(ai.target);
+                        } else if (ai.target.tag === 'Base') {
+                            storage.deposit(ai.target);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     WorkerAI.prototype.onEmpty = function() {
-        this.target = null;
+        this.fsm.transition('idle');
+    };
+
+    WorkerAI.prototype.onFull = function() {
+        this.search('base');
     };
 
     WorkerAI.prototype.onResourceExhausted = function(resource) {
         if (this.target === resource) {
-            this.target = null;
+            this.fsm.transition('idle');
         }
     };
 
     WorkerAI.prototype.search = function(tag) {
         var position = this.entity.getComponent('Transform');
         var path     = this.entity.getComponent('Pathfinding');
+        var prevTarget = this.target;
 
         if (tag === 'resource') {
             this.target = this.entity.field.nearbyResource(this.entity.player, position.x, position.y);
@@ -23,8 +66,9 @@ define(function() {
             this.target = this.entity.player.base;
         }
 
-        if (this.target) {
+        if (this.target && this.target !== prevTarget) {
             path.search(this.target.getComponent('Transform'));
+            this.fsm.transition('moving');
         }
     };
 
@@ -39,32 +83,8 @@ define(function() {
     };
 
 
-    WorkerAI.prototype.update = function(entity, dt) {
-        var path    = this.entity.getComponent('Pathfinding');
-        var storage = this.entity.getComponent('Storage');
-
-        if (this.atTarget()) {
-            path.clearPath();
-
-            if (this.target.tag === 'Base') {
-                storage.deposit(this.target);
-            } else if (this.target.tag === 'Resource') {
-                if (storage.isFull()) {
-                    this.search('base');
-                } else {
-                    storage.consume(this.target);
-                }
-            }
-        } else if (path.isPathing()) {
-            path.move();
-        } else {
-            this.search('resource');
-
-            // Return home if no resources left
-            if (!this.target) {
-                this.search('base');
-            }
-        }
+    WorkerAI.prototype.update = function(dt) {
+        this.fsm.handle('update', this.entity);
     };
 
     return WorkerAI;
