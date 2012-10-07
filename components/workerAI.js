@@ -20,9 +20,10 @@ define(function(require) {
                     'update': function(entity) {
                         var path = entity.getComponent('Pathfinding');
 
-                        path.move();
                         if (ai.atTarget()) {
                             this.transition('interacting');
+                        } else {
+                            path.move();
                         }
                     }
                 },
@@ -68,7 +69,9 @@ define(function(require) {
 
         if (this.target && this.target !== prevTarget) {
             path.search(this.target.getComponent('Transform'));
-            this.fsm.transition('moving');
+            if (path) {
+                this.fsm.transition('moving');
+            }
         }
     };
 
