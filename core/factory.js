@@ -1,4 +1,5 @@
 define(function(require) {
+    var _ = require('underscore');
     var Entity = require('core/entity');
 
     var Transform = require('components/transform');

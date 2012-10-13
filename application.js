@@ -1,3 +1,14 @@
+require.config({
+    paths: {
+        'underscore': 'lib/underscore',
+        'machina': 'lib/machina',
+        'text': 'lib/text',
+        'json': 'lib/json',
+        'EasyStar': 'lib/easystar-0.1.0.min',
+        'SimplexNoise': 'lib/perlin-noise-simplex'
+    }
+});
+
 require(['core/game'], function(Game) {
     var game = new Game();
     game.run();

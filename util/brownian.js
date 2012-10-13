@@ -1,5 +1,5 @@
 define(function(require) {
-    //var SimplexNoise = require('util/simplexNoise');
+    var SimplexNoise = require('SimplexNoise');
 
     function Brownian(width, height, octaves, frequency) {
         this.width = width;

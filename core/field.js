@@ -1,5 +1,6 @@
 define(function(require) {
     var Factory = require('core/factory');
+    var EasyStar = require('EasyStar');
 
     var Brownian = require('util/brownian');
     var kNearestNeighborAverage = require('util/kNearestNeighborAverage');

@@ -1,7 +1,7 @@
-/*global webkitRequestAnimationFrame: true */
 define(function(require) {
     var Field = require('core/field');
     var Player = require('core/player');
+    var requestAnimationFrame = require('lib/requestAnimationFrame');
 
     function Game(options) {
         this.playing = true;
@@ -92,7 +92,7 @@ define(function(require) {
         var render = function(t) {
             var dt = t - t0;
             var elapsed = (t - lastLogicTick) / logicRate;
-            if (game.playing) webkitRequestAnimationFrame(render);
+            if (game.playing) requestAnimationFrame(render);
             game.render(game.context, dt, elapsed);
         };
         render(16);

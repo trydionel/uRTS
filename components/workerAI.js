@@ -1,5 +1,5 @@
 define(function(require) {
-    var machina = require('lib/machina');
+    var machina = require('machina');
 
     function WorkerAI() {
         var ai = this;
