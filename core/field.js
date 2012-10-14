@@ -28,17 +28,40 @@ define(function(require) {
     };
 
     Field.prototype.initializeResources = function(n) {
-        var resource, x, y;
+        var resource, x, y, cx, cy,
+        clusterSize = Math.random() * 5,
+        takenPositions = [];
 
         // Keep an index of resources for faster lookups
         this.resources = [];
         for (var i = 0; i < n; i++) {
-            x = Math.floor(Math.random() * this.size);
-            y = Math.floor(Math.random() * this.size);
-            resource = Factory.resource(this, x, y);
-            this.resources.push(resource);
-            this.entities.push(resource);
+            cx = Math.floor(Math.random() * this.size);
+            cy = Math.floor(Math.random() * this.size);
+
+            for (var c = 0; c < clusterSize; c++) {
+                do {
+                    x = cx + Math.floor(Math.random() * 2 - 1);
+                    y = cy + Math.floor(Math.random() * 2 - 1);
+                } while (takenPositions.indexOf([x, y]) != -1);
+
+                resource = Factory.resource(this, x, y);
+
+                this.resources.push(resource);
+                this.entities.push(resource);
+                takenPositions.push([x, y]);
+
+                this.clearTiles(x, y, 3);
+            }
         }
+    };
+
+    Field.prototype.clearTiles = function(x, y, r) {
+        for (var dy = -r; dy <= r; dy++) {
+            for (var dx = -r; dx <= r; dx++) {
+                this.terrain[y][x] = 0;
+            }
+        }
+        this._cachedImage = null;
     };
 
     Field.prototype.update = function(dt) {

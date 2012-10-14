@@ -22,8 +22,9 @@ define(function(require) {
         this.base = Factory.base(this.field, this, x, y);
         this.entities.push(this.base);
 
-        // Create opening in fog-of-war around the base
+        // Create opening in terrain and fog-of-war around the base
         this.clearFog(x, y, 6);
+        this.field.clearTiles(x, y, 5);
     };
 
     Player.prototype.initializeWorkers = function(n) {
