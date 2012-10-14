@@ -1,9 +1,8 @@
 define(function() {
-    function Transform(x, y) {
-        this.previousX = x;
-        this.previousY = y;
-        this.x = x;
-        this.y = y;
+    function Transform(options) {
+        options = options || {};
+        this.previousX = this.x = options.x;
+        this.previousY = this.y = options.y;
     }
 
     Transform.prototype.set = function(x, y) {

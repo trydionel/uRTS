@@ -1,7 +1,8 @@
 define(function() {
-    function CellView(color, size) {
-        this.color  = color;
-        this.size   = size || 1;
+    function CellView(options) {
+        options = options || {};
+        this.color  = options.color;
+        this.size   = options.size || 1;
         this.offset = Math.floor(this.size / 2.0);
     }
 
@@ -9,7 +10,6 @@ define(function() {
         elapsed = elapsed || 0;
         var scale = context.canvas.width / entity.field.size;
         var position = entity.getComponent('Transform');
-        var team = entity.getComponent('Team');
         var storage = entity.getComponent('Storage');
         var x, y, w, h, capacity;
 
@@ -26,8 +26,8 @@ define(function() {
         context.fillStyle = this.color;
         context.fillRect(x, y, w, h);
 
-        if (team) {
-            context.fillStyle = team.color;
+        if (entity.player) {
+            context.fillStyle = entity.player.color;
             context.fillRect(x, y + h - 2, w, 2);
         }
 

@@ -1,0 +1,21 @@
+{
+    "name": "Worker",
+    "tag": "Worker",
+    "components": {
+        "Transform": {},
+        "MovementSystem": {
+            "speed": 1
+        },
+        "Pathfinding": {},
+        "Storage": {
+            "initial": 0,
+            "capacity": 10
+        },
+        "WorkerAI": {}
+    },
+    "view": {
+        "CellView": {
+            "color": "#999"
+        }
+    }
+}

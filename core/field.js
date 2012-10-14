@@ -44,7 +44,7 @@ define(function(require) {
                     y = cy + Math.floor(Math.random() * 2 - 1);
                 } while (takenPositions.indexOf([x, y]) != -1);
 
-                resource = Factory.resource(this, x, y);
+                resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y }});
 
                 this.resources.push(resource);
                 this.entities.push(resource);

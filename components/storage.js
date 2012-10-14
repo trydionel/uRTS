@@ -1,7 +1,8 @@
 define(function() {
-    function Storage(capacity, initial) {
-        this.capacity = capacity;
-        this.quantity = initial;
+    function Storage(options) {
+        options = options || {};
+        this.capacity = options.capacity;
+        this.quantity = options.initial;
     }
 
     Storage.prototype.isFull = function() {

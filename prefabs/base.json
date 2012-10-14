@@ -1,0 +1,17 @@
+{
+    "name": "Base",
+    "tag": "Base",
+    "components": {
+        "Transform": {},
+        "Storage": {
+            "initial": 0,
+            "capacity": 50000
+        }
+    },
+    "view": {
+        "CellView": {
+            "color": "#333",
+            "size": 3
+        }
+    }
+}

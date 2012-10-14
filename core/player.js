@@ -19,7 +19,7 @@ define(function(require) {
     Player.prototype.initializeBase = function() {
         var x = Math.floor(Math.random() * (this.field.size - 4)) + 2;
         var y = Math.floor(Math.random() * (this.field.size - 4)) + 2;
-        this.base = Factory.base(this.field, this, x, y);
+        this.base = Factory.create('base', { field: this.field, player: this, Transform: { x: x, y: y }});
         this.entities.push(this.base);
 
         // Create opening in terrain and fog-of-war around the base
@@ -32,7 +32,8 @@ define(function(require) {
         for (var i = 0; i < n; i++) {
             x = position.x + Math.floor(Math.random() * 4 - 2);
             y = position.y + Math.floor(Math.random() * 4 - 2);
-            worker = Factory.worker(this.field, this, x, y);
+            //worker = Factory.worker(this.field, this, x, y);
+            worker = Factory.create('worker', { field: this.field, player: this, 'Transform': { x: x, y: y }});
             this.entities.push(worker);
         }
     };
@@ -42,7 +43,7 @@ define(function(require) {
         for (var i = 0; i < n; i++) {
             x = position.x + Math.floor(Math.random() * 4 - 2);
             y = position.y + Math.floor(Math.random() * 4 - 2);
-            warrior = Factory.warrior(this.field, this, x, y);
+            warrior = Factory.create('warrior', { field: this.field, player: this, 'Transform': { x: x, y: y } });
             this.entities.push(warrior);
         }
     };

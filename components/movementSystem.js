@@ -1,8 +1,9 @@
 define(function() {
     var EPSILON = 0.01;
 
-    function MovementSystem(speed) {
-        this.speed = 1; //speed;
+    function MovementSystem(options) {
+        options = options || {};
+        this.speed = options.speed || 1;
         this.direction = { x: 0, y: 0 };
         this.target = null;
     }

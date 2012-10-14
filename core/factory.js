@@ -2,73 +2,53 @@ define(function(require) {
     var _ = require('underscore');
     var Entity = require('core/entity');
 
-    var Transform = require('components/transform');
-    var MovementSystem = require('components/movementSystem');
-    var Pathfinding = require('components/pathfinding');
-    var Team = require('components/team');
-    var Storage = require('components/storage');
-    var WorkerAI = require('components/workerAI');
-    var WarriorAI = require('components/warriorAI');
-    var ResourceAI = require('components/resourceAI');
+    var Components = {
+        'Transform': require('components/transform'),
+        'MovementSystem': require('components/movementSystem'),
+        'Pathfinding': require('components/pathfinding'),
+        'Storage': require('components/storage'),
+        'WorkerAI': require('components/workerAI'),
+        'WarriorAI': require('components/warriorAI'),
+        'ResourceAI': require('components/resourceAI')
+    };
 
-    var CellView = require('views/cellView');
+    var Views = {
+        'CellView': require('views/cellView')
+    };
 
-    function createWorker(field, player, x, y) {
+    // FIXME: This sucks. Find some way to make RequireJS dynamically load files.
+    var Prefabs = {
+        worker: require('json!prefabs/worker.json'),
+        base: require('json!prefabs/base.json'),
+        warrior: require('json!prefabs/warrior.json'),
+        resource: require('json!prefabs/resource.json')
+    };
+
+    function create(name, attributes) {
+        if (!(name in Prefabs)) throw "ArgumentError: " + name + " is not a valid prefab.";
+
+        var prefab = Prefabs[name];
         var entity = new Entity();
-        entity.field = field; // FIXME
-        entity.player = player;
-        entity.setTag('Worker');
-        entity.addComponent(new Transform(x, y));
-        entity.addComponent(new MovementSystem(1));
-        entity.addComponent(new Pathfinding());
-        entity.addComponent(new Team(player.color));
-        entity.addComponent(new Storage(10, 0));
-        entity.addComponent(new WorkerAI());
-        entity.setView(new CellView('#999'));
-        return entity;
-    }
+        entity.field = attributes.field;
+        entity.player = attributes.player;
 
-    function createBase(field, player, x, y) {
-        var entity = new Entity();
-        entity.field = field; // FIXME
-        entity.player = player;
-        entity.setTag('Base');
-        entity.addComponent(new Transform(x, y));
-        entity.addComponent(new Team(player.color));
-        entity.addComponent(new Storage(Infinity, 0));
-        entity.setView(new CellView('#333', 3));
-        return entity;
-    }
+        for (var component in prefab.components) {
+            var defaults = prefab.components[component];
+            var options = _.extend({}, defaults, attributes[component]);
+            entity.addComponent(new Components[component](options));
+        }
 
-    function createResource(field, x, y) {
-        var entity = new Entity();
-        entity.field = field; // FIXME
-        entity.setTag('Resource');
-        entity.addComponent(new Transform(x, y));
-        entity.addComponent(new Storage(25, 25));
-        entity.addComponent(new ResourceAI());
-        entity.setView(new CellView('#fff'));
-        return entity;
-    }
+        for (var view in prefab.view) {
+            var viewOptions = prefab.view[view];
+            entity.setView(new Views[view](viewOptions));
+        }
 
-    function createWarrior(field, player, x, y) {
-        var entity = new Entity();
-        entity.field = field; // FIXME
-        entity.player = player;
-        entity.setTag('Warrior');
-        entity.addComponent(new Transform(x, y));
-        entity.addComponent(new MovementSystem(1));
-        entity.addComponent(new Pathfinding());
-        entity.addComponent(new Team(player.color));
-        entity.addComponent(new WarriorAI());
-        entity.setView(new CellView('#e88'));
+        entity.setTag(attributes.tag || prefab.tag);
+
         return entity;
     }
 
     return {
-        worker: createWorker,
-        warrior: createWarrior,
-        base: createBase,
-        resource: createResource
+        create: create
     };
 });

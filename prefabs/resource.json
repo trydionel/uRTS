@@ -1,0 +1,17 @@
+{
+    "name": "Resource",
+    "tag": "Resource",
+    "components": {
+        "Transform": {},
+        "Storage": {
+            "initial": 25,
+            "capacity": 25
+        },
+        "ResourceAI": {}
+    },
+    "view": {
+        "CellView": {
+            "color": "#fff"
+        }
+    }
+}

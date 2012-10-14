@@ -1,0 +1,17 @@
+{
+    "name": "Warrior",
+    "tag": "Warrior",
+    "components": {
+        "Transform": {},
+        "MovementSystem": {
+            "speed": 1
+        },
+        "Pathfinding": {},
+        "WarriorAI": {}
+    },
+    "view": {
+        "CellView": {
+            "color": "#e88"
+        }
+    }
+}
