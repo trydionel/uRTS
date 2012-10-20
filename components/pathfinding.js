@@ -42,6 +42,8 @@ define(function() {
     };
 
     Pathfinding.prototype.onTargetReached = function() {
+        if (!this.path) return;
+
         this.pathIndex++;
         if (this.pathIndex >= this.path.length) {
             this.entity.broadcast('PathComplete');

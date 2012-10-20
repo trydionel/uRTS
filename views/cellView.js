@@ -40,6 +40,11 @@ define(function() {
             context.fillStyle = 'red';
             context.fillRect(x, y, capacity * w, 2);
         }
+
+        if (entity.selected) {
+            context.strokeStyle = 'yellow';
+            context.strokeRect(x, y, w, h);
+        }
     };
 
     return CellView;

@@ -20,6 +20,7 @@ define(function(require) {
         this.canvas.addEventListener("mousedown", this.startSelect.bind(this));
         this.canvas.addEventListener("mousemove", this.updateSelect.bind(this));
         this.canvas.addEventListener("mouseup", this.stopSelect.bind(this));
+        this.canvas.addEventListener("click", this.issueCommand.bind(this));
     }
 
     Game.prototype.update = function(dt) {
@@ -74,10 +75,35 @@ define(function(require) {
             var w = Math.abs(this.bb.x2 - this.bb.x1) / scale;
             var h = Math.abs(this.bb.y2 - this.bb.y1) / scale;
 
-            console.log(this.bb, x, y, w, h, this.players[0].unitsInBB(x, y, w, h));
+            // Ignore tiny rects
+            if (w > 3 && h > 3) {
+                //console.log(this.bb, x, y, w, h, this.players[0].unitsInBB(x, y, w, h));
+                if (this.selected) {
+                    this.selected.forEach(function(entity) {
+                        entity.selected = false;
+                    });
+                }
+                this.selected = this.players[0].unitsInBB(x, y, w, h);
+                this.selected.forEach(function(entity) {
+                    entity.selected = true;
+                });
+            }
 
             this.bb = null;
             this.selecting = false;
+        }
+    };
+
+    Game.prototype.issueCommand = function(event) {
+        if (this.selected) {
+            var x = Math.floor(event.offsetX / (this.canvas.width / this.field.size));
+            var y = Math.floor(event.offsetY / (this.canvas.width / this.field.size));
+            this.selected.forEach(function(entity) {
+                var path = entity.getComponent('Pathfinding');
+                if (!path) return;
+
+                path.search({ x: x, y: y });
+            });
         }
     };
 

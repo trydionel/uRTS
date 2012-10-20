@@ -44,7 +44,7 @@ define(function(require) {
     Entity.prototype.update = function(dt) {
         this.components.forEach(function(component) {
             if (component.update) {
-                component.update(this, dt);
+                component.update(dt);
             }
         }.bind(this));
     };
