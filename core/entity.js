@@ -1,7 +1,6 @@
 define(function(require) {
     function Entity() {
         this.components = [];
-        this.view = null;
         this.tag = null;
     }
 
@@ -37,20 +36,12 @@ define(function(require) {
         this.tag = tag;
     };
 
-    Entity.prototype.setView = function(view) {
-        this.view = view;
-    };
-
     Entity.prototype.update = function(dt) {
         this.components.forEach(function(component) {
             if (component.update) {
                 component.update(dt);
             }
         }.bind(this));
-    };
-
-    Entity.prototype.render = function(context, dt, elapsed) {
-        this.view.render(this, context, dt, elapsed);
     };
 
     return Entity;

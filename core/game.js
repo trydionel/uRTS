@@ -2,18 +2,25 @@ define(function(require) {
     var Field = require('core/field');
     var Player = require('core/player');
     var requestAnimationFrame = require('lib/requestAnimationFrame');
+    var CellView = require('views/cellView');
 
     function Game(options) {
         this.playing = true;
-        this.field = new Field(100);
+        this.entities = [];
+
+        this.field = new Field(this, 100);
+        this.entities.unshift(this.field);
+
         this.players = [
-            new Player('blue', this.field, { human: true }),
-            new Player('red', this.field)
+            new Player(this, 'blue', this.field, { human: true }),
+            new Player(this, 'red', this.field)
         ];
+        this.entities.push(this.players[0]);
+        this.entities.push(this.players[1]);
+
         this.canvas = document.getElementById('game');
         this.context = this.canvas.getContext('2d');
-
-        this.entities = [this.field, this.players[1], this.players[0]];
+        this.renderer = new CellView(this.context);
 
         // FIXME: Need to tear down these bindings somewhere so reroll will
         // work properly.
@@ -30,8 +37,9 @@ define(function(require) {
     };
 
     Game.prototype.render = function(context, dt, elapsed) {
+        var renderer = this.renderer;
         this.entities.forEach(function(entity) {
-            entity.render(context, dt, elapsed);
+            renderer.render(entity, dt, elapsed);
         });
         this.renderSelect(context);
     };

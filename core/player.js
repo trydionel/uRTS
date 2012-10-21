@@ -2,9 +2,10 @@ define(function(require) {
     var FogOfWar = require('core/fogOfWar');
     var Factory = require('core/factory');
 
-    function Player(color, field, options) {
+    function Player(game, color, field, options) {
         options = options || {};
 
+        this.game = game;
         this.color = color;
         this.field = field;
         this.human = options.human;
@@ -20,7 +21,7 @@ define(function(require) {
         var x = Math.floor(Math.random() * (this.field.size - 4)) + 2;
         var y = Math.floor(Math.random() * (this.field.size - 4)) + 2;
         this.base = Factory.create('base', { field: this.field, player: this, Transform: { x: x, y: y }});
-        this.entities.push(this.base);
+        this.game.entities.push(this.base);
 
         // Create opening in terrain and fog-of-war around the base
         this.clearFog(x, y, 6);
@@ -35,6 +36,7 @@ define(function(require) {
             //worker = Factory.worker(this.field, this, x, y);
             worker = Factory.create('worker', { field: this.field, player: this, 'Transform': { x: x, y: y }});
             this.entities.push(worker);
+            this.game.entities.push(worker);
         }
     };
 
@@ -45,22 +47,15 @@ define(function(require) {
             y = position.y + Math.floor(Math.random() * 4 - 2);
             warrior = Factory.create('warrior', { field: this.field, player: this, 'Transform': { x: x, y: y } });
             this.entities.push(warrior);
+            this.game.entities.push(warrior);
         }
     };
 
-    Player.prototype.update = function(dt) {
-        this.entities.forEach(function(entity) {
-            entity.update(dt);
-        });
-    };
+    Player.prototype.update = function() {};
 
     Player.prototype.render = function(context, dt, elapsed) {
-        this.entities.forEach(function(entity) {
-            entity.render(context, dt, elapsed);
-        });
         if (this.human) this.fog.render(context);
     };
-
 
     Player.prototype.underFog = function(x, y) {
         return this.fog.presentAt(x, y);

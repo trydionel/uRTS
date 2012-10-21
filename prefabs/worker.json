@@ -11,10 +11,8 @@
             "initial": 0,
             "capacity": 10
         },
-        "WorkerAI": {}
-    },
-    "view": {
-        "CellView": {
+        "WorkerAI": {},
+        "Appearance": {
             "color": "#999"
         }
     }

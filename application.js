@@ -10,7 +10,7 @@ require.config({
 });
 
 require(['core/game'], function(Game) {
-    var game = new Game();
+    var game = window.game = new Game();
     game.run();
 
     document.getElementById('start').addEventListener('click', function() {
@@ -23,7 +23,7 @@ require(['core/game'], function(Game) {
 
     document.getElementById('reroll').addEventListener('click', function() {
        game.stop();
-       game = new Game();
+       game = window.game = new Game();
        game.run();
     });
 });

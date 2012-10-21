@@ -7,10 +7,8 @@
             "speed": 1
         },
         "Pathfinding": {},
-        "WarriorAI": {}
-    },
-    "view": {
-        "CellView": {
+        "WarriorAI": {},
+        "Appearance": {
             "color": "#e88"
         }
     }

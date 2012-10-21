@@ -3,6 +3,7 @@ define(function(require) {
     var Entity = require('core/entity');
 
     var Components = {
+        'Appearance': require('components/appearance'),
         'Transform': require('components/transform'),
         'MovementSystem': require('components/movementSystem'),
         'Pathfinding': require('components/pathfinding'),
@@ -10,10 +11,6 @@ define(function(require) {
         'WorkerAI': require('components/workerAI'),
         'WarriorAI': require('components/warriorAI'),
         'ResourceAI': require('components/resourceAI')
-    };
-
-    var Views = {
-        'CellView': require('views/cellView')
     };
 
     // FIXME: This sucks. Find some way to make RequireJS dynamically load files.
@@ -38,10 +35,6 @@ define(function(require) {
             entity.addComponent(new Components[component](options));
         }
 
-        for (var view in prefab.view) {
-            var viewOptions = prefab.view[view];
-            entity.setView(new Views[view](viewOptions));
-        }
 
         entity.setTag(attributes.tag || prefab.tag);
 

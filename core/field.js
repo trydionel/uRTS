@@ -7,7 +7,8 @@ define(function(require) {
     var quantize = require('util/quantize');
     var renderToCanvas = require('util/renderToCanvas');
 
-    function Field(size) {
+    function Field(game, size) {
+        this.game = game;
         this.size = size;
         this.entities = [];
         this.terrain = [];
@@ -47,7 +48,7 @@ define(function(require) {
                 resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y }});
 
                 this.resources.push(resource);
-                this.entities.push(resource);
+                this.game.entities.push(resource);
                 takenPositions.push([x, y]);
 
                 this.clearTiles(x, y, 3);
@@ -64,17 +65,8 @@ define(function(require) {
         this._cachedImage = null;
     };
 
-    Field.prototype.update = function(dt) {
-        this.entities.forEach(function(entity) {
-            entity.update(dt);
-        });
-    };
-
     Field.prototype.render = function(context, dt, elapsed) {
         this.renderSelf(context);
-        this.entities.forEach(function(entity) {
-            entity.render(context, dt, elapsed);
-        });
     };
 
     Field.prototype.renderSelf = function(context) {
@@ -116,6 +108,8 @@ define(function(require) {
     Field.prototype.onPathComplete = function(path) {
         this._lastPath = path;
     };
+
+    Field.prototype.update = function() {};
 
     Field.prototype.search = function(sx, sy, fx, fy, callback) {
         try {

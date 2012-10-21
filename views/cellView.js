@@ -1,29 +1,38 @@
 define(function() {
-    function CellView(options) {
-        options = options || {};
-        this.color  = options.color;
-        this.size   = options.size || 1;
-        this.offset = Math.floor(this.size / 2.0);
+    function CellView(context) {
+        this.context = context;
     }
 
-    CellView.prototype.render = function(entity, context, dt, elapsed) {
+    CellView.prototype.render = function(entity, dt, elapsed) {
         elapsed = elapsed || 0;
+
+        // Shim in previous behavior
+        if (entity.render) {
+            entity.render(this.context, dt, elapsed);
+            return;
+        }
+
+        var appearance = entity.getComponent('Appearance');
+        if (!appearance) return;
+
+        var context = this.context;
         var scale = context.canvas.width / entity.field.size;
         var position = entity.getComponent('Transform');
         var storage = entity.getComponent('Storage');
-        var x, y, w, h, capacity;
+        var offset, x, y, w, h, capacity;
 
         var lerp = function(a, b, t) {
             return (1 - t) * a + t * b;
         };
 
         if (!position) throw 'MissingComponent: CellView requires a Position component.';
-        x = scale * (lerp(position.previousX, position.x, elapsed) - this.offset);
-        y = scale * (lerp(position.previousY, position.y, elapsed) - this.offset);
-        w = scale * this.size;
-        h = scale * this.size;
+        offset = Math.floor(appearance.size / 2.0);
+        x = scale * (lerp(position.previousX, position.x, elapsed) - offset);
+        y = scale * (lerp(position.previousY, position.y, elapsed) - offset);
+        w = scale * appearance.size;
+        h = scale * appearance.size;
 
-        context.fillStyle = this.color;
+        context.fillStyle = appearance.color;
         context.fillRect(x, y, w, h);
 
         if (entity.player) {
