@@ -1,35 +1,35 @@
 define(function(require) {
     function Entity() {
-        this.components = [];
+        this.components = {};
         this.tag = null;
     }
 
     Entity.prototype.addComponent = function(component) {
+        if (this.components[component.constructor.name]) throw "Duplicate component inserted into Entity";
+
         component.entity = this;
-        this.components.push(component);
+        this.components[component.constructor.name] = component;
     };
 
     Entity.prototype.getComponent = function(name) {
-        var found = this.components.filter(function(component) {
-            return component.constructor.name == name;
-        });
-        return found[0];
+        return this.components[name];
     };
 
     Entity.prototype.removeComponent = function(component) {
         if (component.entity === this) {
             component.entity = null;
-            this.components.splice(this.components.indexOf(component));
+            delete this.components[component.constructor.name];
         }
     };
 
     Entity.prototype.broadcast = function(message, data) {
         var method = "on" + message;
-        this.components.forEach(function(component) {
+        for (var name in this.components) {
+            var component = this.components[name];
             if (component[method]) {
                 component[method](data);
             }
-        });
+        }
     };
 
     Entity.prototype.setTag = function(tag) {
@@ -37,11 +37,12 @@ define(function(require) {
     };
 
     Entity.prototype.update = function(dt) {
-        this.components.forEach(function(component) {
+        for (var name in this.components) {
+            var component = this.components[name];
             if (component.update) {
                 component.update(dt);
             }
-        }.bind(this));
+        }
     };
 
     return Entity;
