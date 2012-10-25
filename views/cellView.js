@@ -50,7 +50,7 @@ define(function() {
             context.fillRect(x, y, capacity * w, 2);
         }
 
-        if (entity.selected) {
+        if (appearance.selected) {
             context.strokeStyle = 'yellow';
             context.strokeRect(x, y, w, h);
         }
