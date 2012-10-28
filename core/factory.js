@@ -35,13 +35,14 @@ define(function(require) {
             entity.addComponent(new Components[component](options));
         }
 
-
         entity.setTag(attributes.tag || prefab.tag);
 
         return entity;
     }
 
     return {
+        Entity: Entity,
+        Components: Components,
         create: create
     };
 });

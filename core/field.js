@@ -1,6 +1,7 @@
 define(function(require) {
     var Factory = require('core/factory');
     var EasyStar = require('EasyStar');
+    var THREE = require('THREE');
 
     var Brownian = require('util/brownian');
     var kNearestNeighborAverage = require('util/kNearestNeighborAverage');
@@ -8,6 +9,8 @@ define(function(require) {
     var renderToCanvas = require('util/renderToCanvas');
 
     function Field(game, size) {
+        Factory.Entity.call(this);
+
         this.game = game;
         this.size = size;
         this.entities = [];
@@ -18,9 +21,19 @@ define(function(require) {
         this.initializeResources(2 * Math.sqrt(this.size));
     }
 
+    Field.prototype = new Factory.Entity();
+
     Field.prototype.initializeTerrain = function() {
         var brownian = new Brownian(this.size, this.size, 6);
         this.terrain = quantize(kNearestNeighborAverage(brownian.toArray(), this.size, this.size, 2), 5);
+
+        // FIXME: Nasty hacks until Field is a proper Entity
+        this.addComponent(new Factory.Components.Transform({ z: -1 }));
+        this.addComponent(new Factory.Components.Appearance({
+            mesh: new THREE.Mesh(new THREE.CubeGeometry(1000, 1000, 1), new THREE.MeshBasicMaterial({ color: 0x00ff00 })),
+            size: this.size,
+            color: '#00ff00'
+        }));
     };
 
     Field.prototype.initializePath = function() {
@@ -48,7 +61,7 @@ define(function(require) {
                 resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y }});
 
                 this.resources.push(resource);
-                this.game.entities.push(resource);
+                this.game.addEntity(resource);
                 takenPositions.push([x, y]);
 
                 this.clearTiles(x, y, 3);
@@ -66,10 +79,6 @@ define(function(require) {
     };
 
     Field.prototype.render = function(context, dt, elapsed) {
-        this.renderSelf(context);
-    };
-
-    Field.prototype.renderSelf = function(context) {
         this._cachedImage = this._cachedImage || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
             var size = context.canvas.width / this.size;
             var color, lum;
@@ -108,8 +117,6 @@ define(function(require) {
     Field.prototype.onPathComplete = function(path) {
         this._lastPath = path;
     };
-
-    Field.prototype.update = function() {};
 
     Field.prototype.search = function(sx, sy, fx, fy, callback) {
         try {

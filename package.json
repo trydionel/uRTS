@@ -9,7 +9,8 @@
       "json": "github:millermedeiros/requirejs-plugins/master#src/json.js",
       "text": "github:requirejs/text/2.0.3",
       "easystar-0.1.0.min": "github:prettymuchbryce/easystarjs/master#easystar-0.1.0.min.js",
-      "perlin-noise-simplex": "https://raw.github.com/gist/304522/2e0b128e25655ef088c9d1f9767ae17f732c15f1/perlin-noise-simplex.js"
+      "perlin-noise-simplex": "https://raw.github.com/gist/304522/2e0b128e25655ef088c9d1f9767ae17f732c15f1/perlin-noise-simplex.js",
+      "three.min": "github:mrdoob/three.js/r52"
     }
   }
 }

@@ -5,7 +5,8 @@ require.config({
         'text': 'lib/text',
         'json': 'lib/json',
         'EasyStar': 'lib/easystar-0.1.0.min',
-        'SimplexNoise': 'lib/perlin-noise-simplex'
+        'SimplexNoise': 'lib/perlin-noise-simplex',
+        'THREE': 'lib/three.min'
     }
 });
 

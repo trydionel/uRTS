@@ -1,8 +1,10 @@
 define(function(require) {
     var FogOfWar = require('core/fogOfWar');
     var Factory = require('core/factory');
+    var Entity = require('core/entity');
 
     function Player(game, color, field, options) {
+        Entity.call(this);
         options = options || {};
 
         this.game = game;
@@ -17,11 +19,13 @@ define(function(require) {
         this.initializeWarriors(1);
     }
 
+    Player.prototype = new Entity();
+
     Player.prototype.initializeBase = function() {
         var x = Math.floor(Math.random() * (this.field.size - 4)) + 2;
         var y = Math.floor(Math.random() * (this.field.size - 4)) + 2;
         this.base = Factory.create('base', { field: this.field, player: this, Transform: { x: x, y: y }});
-        this.game.entities.push(this.base);
+        this.game.addEntity(this.base);
 
         // Create opening in terrain and fog-of-war around the base
         this.clearFog(x, y, 6);
@@ -36,7 +40,7 @@ define(function(require) {
             //worker = Factory.worker(this.field, this, x, y);
             worker = Factory.create('worker', { field: this.field, player: this, 'Transform': { x: x, y: y }});
             this.entities.push(worker);
-            this.game.entities.push(worker);
+            this.game.addEntity(worker);
         }
     };
 
@@ -47,7 +51,7 @@ define(function(require) {
             y = position.y + Math.floor(Math.random() * 4 - 2);
             warrior = Factory.create('warrior', { field: this.field, player: this, 'Transform': { x: x, y: y } });
             this.entities.push(warrior);
-            this.game.entities.push(warrior);
+            this.game.addEntity(warrior);
         }
     };
 
