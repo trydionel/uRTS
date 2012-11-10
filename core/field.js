@@ -1,4 +1,5 @@
 define(function(require) {
+    var _ = require('underscore');
     var Factory = require('core/factory');
     var EasyStar = require('EasyStar');
     var THREE = require('THREE');
@@ -24,25 +25,55 @@ define(function(require) {
     Field.prototype = new Factory.Entity();
 
     Field.prototype.initializeTerrain = function() {
-        var brownian = new Brownian(this.size, this.size, 6);
-        this.terrain = quantize(kNearestNeighborAverage(brownian.toArray(), this.size, this.size, 2), 5);
+        var brownian = new Brownian(this.size, this.size, 8, 0.01);
+        this.terrain = quantize(kNearestNeighborAverage(brownian.toArray(), this.size, this.size, 2), 2);
 
         // FIXME: Nasty hacks until Field is a proper Entity
-        this.addComponent(new Factory.Components.Transform({ z: -1 }));
-        this.addComponent(new Factory.Components.Appearance({
-            mesh: new THREE.Mesh(new THREE.CubeGeometry(1000, 1000, 1), new THREE.MeshBasicMaterial({ color: 0x00ff00 })),
-            size: this.size,
-            color: '#00ff00'
+        var mesh, geometry, material, modelAsPlane = false;
+        material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+        if (modelAsPlane) {
+            geometry = new THREE.PlaneGeometry(this.size, this.size, this.size, this.size);
+            mesh = new THREE.Mesh(geometry, material);
+
+            for (var x = 0; x < this.size; x++) {
+                for (var y = 0; y < this.size; y++) {
+                    var vertex = geometry.vertices[this.size * y + x];
+                    vertex.z = this.terrain[y][x] - 0.5;
+                }
+            }
+            geometry.verticesNeedUpdate = true;
+        } else {
+            var cube;
+            mesh = new THREE.Object3D();
+            geometry = new THREE.CubeGeometry(1, 1, 1);
+
+            for (var y = 0; y < this.size; y++) {
+                for (var x = 0; x < this.size; x++) {
+                    cube = new THREE.Mesh(geometry, material);
+                    cube.position.x = x - 0.5 * this.size;
+                    cube.position.y = y - 0.5 * this.size;
+                    cube.position.z = this.terrain[y][x] - 0.5;
+                    mesh.add(cube);
+                }
+            }
+        }
+
+        mesh.castShadow = mesh.receiveShadow = true;
+        this.addComponent(new Factory.Components.Transform({
+            x: this.size / 2,
+            y: this.size / 2,
+            z: 0
         }));
+        this.addComponent(new Factory.Components.Appearance({ mesh: mesh }));
     };
 
     Field.prototype.initializePath = function() {
-        this.path = new EasyStar.js([0], this.onPathComplete.bind(this));
+        this.path = new EasyStar.js(_.range(-20, 20, 1), this.onPathComplete.bind(this));
         this.path.setGrid(this.terrain);
     };
 
     Field.prototype.initializeResources = function(n) {
-        var resource, x, y, cx, cy,
+        var resource, x, y, z, cx, cy,
         clusterSize = Math.random() * 5,
         takenPositions = [];
 
@@ -56,9 +87,10 @@ define(function(require) {
                 do {
                     x = cx + Math.floor(Math.random() * 2 - 1);
                     y = cy + Math.floor(Math.random() * 2 - 1);
+                    z = this.terrain[y][x] + 0.5;
                 } while (takenPositions.indexOf([x, y]) != -1);
 
-                resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y }});
+                resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y, z: z }});
 
                 this.resources.push(resource);
                 this.game.addEntity(resource);
@@ -76,23 +108,6 @@ define(function(require) {
             }
         }
         this._cachedImage = null;
-    };
-
-    Field.prototype.render = function(context, dt, elapsed) {
-        this._cachedImage = this._cachedImage || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
-            var size = context.canvas.width / this.size;
-            var color, lum;
-            this.terrain.forEach(function(row, y) {
-                row.forEach(function(height, x) {
-                    lum = 20 + (1 + height) / 8.0 * 100;
-                    color = 'hsl(90, 60%, ' + lum + '%)';
-
-                    buffer.fillStyle = color;
-                    buffer.fillRect(size * x, size * y, size, size);
-                });
-            });
-        }.bind(this));
-        context.drawImage(this._cachedImage, 0, 0);
     };
 
     Field.prototype.availableResources = function(player) {

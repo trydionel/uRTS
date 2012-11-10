@@ -34,16 +34,17 @@ define(function() {
             Math.abs(this.target.y - position.y) <= 1;
     };
 
-    MovementSystem.prototype.update = function(entity, dt) {
+    MovementSystem.prototype.update = function(dt) {
         var position = this.entity.getComponent('Transform');
         var x = position.x + this.direction.x;
         var y = position.y + this.direction.y;
+        var z = this.entity.field.terrain[y][x] + 0.5;
 
-        position.set(x, y);
+        position.set(x, y, z);
 
         if (this.atTarget()) {
             this.target = null;
-            this.move({ x: 0, y: 0 });
+            this.move({ x: 0, y: 0, z: 0 });
             this.entity.broadcast('TargetReached');
         }
     };

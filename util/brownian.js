@@ -29,7 +29,7 @@ define(function(require) {
 
     Brownian.prototype.noise = function(x, y) {
         var sum = 0,
-            freq = 1.0,
+            freq = this.frequency,
             amp = 1.0,
             n;
 
