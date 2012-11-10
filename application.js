@@ -6,7 +6,13 @@ require.config({
         'json': 'lib/json',
         'EasyStar': 'lib/easystar-0.1.0.min',
         'SimplexNoise': 'lib/perlin-noise-simplex',
-        'THREE': 'lib/three.min'
+        'THREE': 'lib/three.min',
+        'THREE-Shaders': 'lib/THREE-Shaders',
+        'THREE-Postprocessing': 'lib/THREE-Postprocessing'
+    },
+    shim: {
+        'THREE-Shaders': ['THREE'],
+        'THREE-Postprocessing': ['THREE']
     }
 });
 
