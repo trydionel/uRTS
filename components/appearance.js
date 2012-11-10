@@ -14,11 +14,13 @@ define(function(require) {
     Appearance.prototype.genericMesh = function() {
         var color = parseInt(this.color.replace('#', ''), 16);
         var geometry = new THREE.CubeGeometry(this.size, this.size, this.size);
-        var material = new THREE.MeshBasicMaterial({
+        var material = new THREE.MeshLambertMaterial({
             color: new THREE.Color(color)
         });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = mesh.receiveShadow = true;
 
-        return new THREE.Mesh(geometry, material);
+        return mesh;
     };
 
     Appearance.prototype.onSelect = function() {
