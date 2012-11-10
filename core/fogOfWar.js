@@ -1,11 +1,20 @@
 define(function(require) {
-    var renderToCanvas = require('util/renderToCanvas');
-    
+    var THREE = require('THREE');
+    var Factory = require('core/factory');
+
     var FOG_MASK = 1;
 
-    function FogOfWar(size) {
-        this.size = size;
+    function FogOfWar(size, visible) {
+        Factory.Entity.call(this);
 
+        this.size = size;
+        this.visible = visible;
+        this.initializeFog();
+    }
+
+    FogOfWar.prototype = new Factory.Entity();
+
+    FogOfWar.prototype.initializeFog = function() {
         var row, fog = [];
         for (var j = 0; j < this.size; j++) {
             row = [];
@@ -15,7 +24,23 @@ define(function(require) {
             fog.push(row);
         }
         this.fog = fog;
-    }
+        if (!this.visible) return;
+
+        this.buildTexture();
+        var geometry = new THREE.PlaneGeometry(this.size, this.size);
+        var material = new THREE.MeshLambertMaterial({
+            map: this.texture,
+            transparent: true
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+
+        this.addComponent(new Factory.Components.Transform({
+            x: this.size / 2,
+            y: this.size / 2,
+            z: 5
+        }));
+        this.addComponent(new Factory.Components.Appearance({ mesh: mesh }));
+    };
 
     FogOfWar.prototype.presentAt = function(x, y) {
         return this.fog[y][x] === FOG_MASK;
@@ -33,32 +58,42 @@ define(function(require) {
                     if (tx >= 0 && tx < this.size && ty >= 0 && ty < this.size) {
                         current = this.fog[ty][tx];
                         updated = current & ~FOG_MASK;
-                        changed |= (current !== updated);
+                        changed = (current !== updated);
 
                         this.fog[ty][tx] = updated;
+                        if (changed && this.texture) this.updateTexture(x, y, updated);
                     }
                 }
             }
         }
-
-        if (changed) this._cached = null;
     };
 
-    FogOfWar.prototype.render = function(context) {
-        this._cached = this._cached || renderToCanvas(context.canvas.width, context.canvas.height, function(buffer) {
-            var size = buffer.canvas.width / this.size;
-            buffer.fillStyle = 'darkgray';
-
-            for (var y = 0; y < this.size; y++) {
-                for (var x = 0; x < this.size; x++) {
-                    if (this.presentAt(x, y)) {
-                        buffer.fillRect(size * x, size * y, size, size);
-                    }
-                }
+    FogOfWar.prototype.buildTexture = function() {
+        var size = this.size * this.size;
+        var colors = new Array(size * 4);
+        var gray = 32, r = gray, g = gray, b = gray;
+        for (var y = 0; y < this.size; y++) {
+            for (var x = 0; x < this.size; x++) {
+                var i = this.size * y + x;
+                var a = this.presentAt(x, y) ? 255 : 0;
+                colors[4 * i + 0] = r;
+                colors[4 * i + 1] = b;
+                colors[4 * i + 2] = g;
+                colors[4 * i + 3] = a;
             }
-        }.bind(this));
+        }
 
-        context.drawImage(this._cached, 0, 0);
+        this.textureData = new Uint8Array(size * 4);
+        this.textureData.set(colors);
+        this.texture = new THREE.DataTexture(this.textureData, this.size, this.size, THREE.RGBAFormat);
+        this.texture.needsUpdate = true;
+    };
+
+    FogOfWar.prototype.updateTexture = function(x, y, mask) {
+        var i = this.size * y + x;
+        var alpha = mask === FOG_MASK ? 255 : 0;
+        this.textureData[4 * i + 3] = alpha;
+        this.texture.needsUpdate = true;
     };
 
     return FogOfWar;

@@ -12,7 +12,8 @@ define(function(require) {
         this.field = field;
         this.human = options.human;
         this.entities = [];
-        this.fog = new FogOfWar(this.field.size);
+        this.fog = new FogOfWar(this.field.size, this.human);
+        this.game.addEntity(this.fog);
 
         this.initializeBase();
         this.initializeWorkers(3);
@@ -53,12 +54,6 @@ define(function(require) {
             this.entities.push(warrior);
             this.game.addEntity(warrior);
         }
-    };
-
-    Player.prototype.update = function() {};
-
-    Player.prototype.render = function(context, dt, elapsed) {
-        if (this.human) this.fog.render(context);
     };
 
     Player.prototype.underFog = function(x, y) {
