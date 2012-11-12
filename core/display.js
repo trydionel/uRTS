@@ -1,7 +1,6 @@
 define(function(require) {
     var THREE = require('THREE');
-    var shaders = require('THREE-Shaders');
-    var postproc = require('THREE-Postprocessing');
+    var Stats = require('Stats');
 
     function Display(width, height) {
         this.width = width;
