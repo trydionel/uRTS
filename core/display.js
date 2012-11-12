@@ -6,18 +6,20 @@ define(function(require) {
         this.width = width;
         this.height = height;
         this.distance = 25;
-        this.angle = 45 * Math.PI / 180;
-        this.distanceX = this.distance * Math.cos(this.angle);
-        this.distanceY = this.distance * Math.sin(this.angle);
-        this.cameraHeight = 10;
+        this.azimuth = 45 * Math.PI / 180;
+        this.altitude = 60 * Math.PI / 180;
+        this.distanceX = this.distance * Math.cos(this.azimuth);
+        this.distanceY = this.distance * Math.sin(this.azimuth);
+        this.cameraHeight = this.distance * Math.sin(this.altitude);
 
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog( 0x000000, 10, 10000 );
+        this.scene.fog = new THREE.Fog( 0xffffff, 0.1, 500 );
 
         this.initCamera();
         this.initLights();
         this.initRenderer();
-        //this.initPostprocessing();
+        this.initPostprocessing();
+        this.initStats();
 
         this.scene.add(this.camera);
         this.scene.add(new THREE.AmbientLight(0x888888));
@@ -28,53 +30,39 @@ define(function(require) {
     }
 
     Display.prototype.initCamera = function() {
-        this.camera = new THREE.PerspectiveCamera(45, this.width / this.height, 1, 10000);
-        this.camera.position.z = 10;
+        this.camera = new THREE.PerspectiveCamera(45, this.width / this.height, 0.01, 1000);
         this.camera.up = new THREE.Vector3(0, 0, 1);
-        this.camera.lookAt(new THREE.Vector3(this.width / 2, this.height / 2, 0));
     };
 
     Display.prototype.initLights = function() {
-        this.light = new THREE.DirectionalLight(0xffdddd, 0.95);
+        this.light = new THREE.DirectionalLight(0xffdddd, 0.8);
         this.light.position.x = 100;
         this.light.position.z = 50;
-        this.light.castShadow = true;
+        this.light.castShadow = false;
 
         this.shadow = new THREE.DirectionalLight(0xffffff);
         this.shadow.position.set( 100, 100, 75 );
 		this.shadow.castShadow = true;
 		this.shadow.onlyShadow = true;
-		//dirLight2.shadowCameraVisible = true;
 		this.shadow.shadowCameraNear = 0.1;
 		this.shadow.shadowCameraFar = 250;
-
-		this.shadow.shadowDarkness = 0.25;
-		this.shadow.shadowMapWidth = 2048;
-		this.shadow.shadowMapHeight = 2048;
-
-		var d = 100;
-		this.shadow.shadowCameraLeft = -d * 2;
-		this.shadow.shadowCameraRight = d * 2;
-		this.shadow.shadowCameraTop = d;
-		this.shadow.shadowCameraBottom = -d;
     };
 
     Display.prototype.initRenderer = function() {
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         this.renderer.setSize(this.width, this.height);
-        this.renderer.setClearColorHex(0x87CEEB);
         this.renderer.setClearColor( this.scene.fog.color, 1 );
         this.renderer.shadowMapEnabled = true;
-        this.renderer.shadowMapSoft = true;
+        //this.renderer.shadowMapSoft = true;
 
-        this.renderer.shadowCameraNear = 3;
+        this.renderer.shadowCameraNear = this.camera.near;
         this.renderer.shadowCameraFar = this.camera.far;
         this.renderer.shadowCameraFov = 50;
 
 		this.renderer.gammaInput = true;
 		this.renderer.gammaOutput = true;
 		this.renderer.physicallyBasedShading = true;
-        //this.renderer.autoClear = false;
+        this.renderer.autoClear = false;
 
         this.renderer.shadowMapBias = 0.0039;
         this.renderer.shadowMapDarkness = 0.5;
@@ -83,47 +71,96 @@ define(function(require) {
     };
 
     Display.prototype.initPostprocessing = function() {
-        var SCALE = 0.75;
-        this.cubeCamera = new THREE.CubeCamera( 1, 10000, 128 );
-		this.scene.add( this.cubeCamera );
+        this.postProcessing = true;
+
+        // FIXME: Need to fix effect pipeline so that I can scale down the
+        // shader targets without scaling the final result!
+        //
+        var SCALE = 1;
+        var sW = SCALE * this.width;
+        var sH = SCALE * this.height;
 
         var renderTargetParametersRGB = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat };
         var renderTargetParametersRGBA = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
-        var depthTarget = new THREE.WebGLRenderTarget( SCALE * this.width, SCALE * this.height, renderTargetParametersRGBA );
-        var colorTarget = new THREE.WebGLRenderTarget( SCALE * this.width, SCALE * this.height, renderTargetParametersRGB );
 
-		var effectColor = new THREE.ShaderPass( THREE.ShaderExtras[ "colorCorrection" ] );
-        var effectSSAO = new THREE.ShaderPass( THREE.ShaderExtras[ "ssao" ] );
-        var effectFXAA = new THREE.ShaderPass( THREE.ShaderExtras[ "fxaa" ] );
-        var effectScreen = new THREE.ShaderPass( THREE.ShaderExtras[ "screen" ] );
+        /*******************************
+         * Depth Pass
+         *******************************/
+        var depthShader = THREE.ShaderLib[ "depthRGBA" ];
+        var depthUniforms = THREE.UniformsUtils.clone( depthShader.uniforms );
+        this.depthTarget = new THREE.WebGLRenderTarget( sW, sH, renderTargetParametersRGBA );
 
-		this.composer = new THREE.EffectComposer( this.renderer, colorTarget );
-		this.composer.addPass( effectSSAO );
-        this.composer.addPass( effectColor );
-		this.composer.addPass( effectFXAA );
-		this.composer.addPass( effectScreen );
+        this.depthMaterial = new THREE.ShaderMaterial({
+            fragmentShader: depthShader.fragmentShader,
+            vertexShader: depthShader.vertexShader,
+            uniforms: depthUniforms
+        });
+        this.depthMaterial.blending = THREE.NoBlending;
 
-        effectScreen.renderToScreen = true;
-        effectScreen.enabled = true;
+        /*******************************
+         * Post-processing Passes
+         *******************************/
+        var passes = {
+            'SSAO': {
+                'tDepth': this.depthTarget,
+                'size': new THREE.Vector2(sW, sH),
+                'cameraNear': this.camera.near,
+                'cameraFar': this.camera.far,
+                'fogNear': this.scene.fog.near,
+                'fogFar': this.scene.fog.far,
+                'fogEnabled': true,
+                'aoClamp': 0.5,
+                'onlyAO': false
+            },
+            'ColorCorrection': {
+                'mulRGB': new THREE.Vector3(1.4, 1.4, 1.4),
+                'powRGB': new THREE.Vector3(1.2, 1.2, 1.2)
+            },
+            'FXAA': {
+                'resolution': new THREE.Vector2(1 / sW, 1 / sH)
+            }
+        };
 
-		this.depthPassPlugin = new THREE.DepthPassPlugin();
-		this.depthPassPlugin.renderTarget = depthTarget;
+        // Using a custom render target because the one provided by EffectComposer
+        // is too large -- it uses screen resolution rather than our much-constrained
+        // fractional window size.
+        //
+        var colorTarget = new THREE.WebGLRenderTarget(this.width, this.height, renderTargetParametersRGB );
+		this.composer = new THREE.EffectComposer(this.renderer, colorTarget);
 
-		this.renderer.addPrePlugin( this.depthPassPlugin );
+        // Build out the post-processing shader passes. `passes` is a structure
+        // of
+        //    {
+        //      passName1: uniforms,
+        //      passName2: uniforms,
+        //      ...
+        //    }
+        //
+        var shader, uniforms, pass;
+        for (var passName in passes) {
+            shader = THREE[passName + 'Shader'];
+            pass = new THREE.ShaderPass(shader);
+            uniforms = passes[passName];
 
-		effectSSAO.uniforms[ 'tDepth' ].texture = depthTarget;
-		effectSSAO.uniforms[ 'size' ].value.set( SCALE * this.width, SCALE * this.height );
-		effectSSAO.uniforms[ 'cameraNear' ].value = this.camera.near;
-		effectSSAO.uniforms[ 'cameraFar' ].value = this.camera.far;
-		effectSSAO.uniforms[ 'fogNear' ].value = this.scene.fog.near;
-		effectSSAO.uniforms[ 'fogFar' ].value = this.scene.fog.far;
-		effectSSAO.uniforms[ 'fogEnabled' ].value = 1;
-		effectSSAO.uniforms[ 'aoClamp' ].value = 0.5;
+            for (var key in uniforms) {
+                pass.uniforms[key].value = uniforms[key];
+            }
 
-		effectFXAA.uniforms[ 'resolution' ].value.set( 1 / ( SCALE * this.width ), 1 / ( SCALE * this.height ) );
+            this.composer.addPass(pass);
+        }
 
-		effectColor.uniforms[ 'mulRGB' ].value.set( 1.4, 1.4, 1.4 );
-		effectColor.uniforms[ 'powRGB' ].value.set( 1.2, 1.2, 1.2 );
+        // Draw the last pass of the composer to the screen.
+        //
+        this.composer.passes[this.composer.passes.length - 1].renderToScreen = true;
+    };
+
+    Display.prototype.initStats = function() {
+        this.stats = new Stats();
+        this.stats.domElement.style.position = 'absolute';
+        this.stats.domElement.style.right = '0px';
+        this.stats.domElement.style.bottom = '0px';
+
+        document.body.appendChild( this.stats.domElement );
     };
 
     Display.prototype.add = function(mesh) {
@@ -142,23 +179,24 @@ define(function(require) {
     };
 
     Display.prototype.render = function() {
-        this.renderer.render(this.scene, this.camera);
-        return;
+        this.stats.begin();
 
-		this.renderer.autoClear = false;
-		this.renderer.autoUpdateObjects = true;
-		this.renderer.shadowMapEnabled = true;
-		this.depthPassPlugin.enabled = true;
+        if (!this.postProcessing) {
+            this.renderer.render(this.scene, this.camera);
+        } else {
+            // Depth pass
+            this.scene.overrideMaterial = this.depthMaterial;
+            this.renderer.render(this.scene, this.camera, this.depthTarget, true);
 
-        //this.renderer.render(this.scene, this.camera, this.composer.renderTarget2, true);
-		this.renderer.initWebGLObjects( this.scene );
-		this.renderer.updateShadowMap( this.scene, this.camera );
+            // Color pass
+            this.scene.overrideMaterial = null;
+            this.renderer.render(this.scene, this.camera, this.composer.renderTarget2, true);
 
-        this.cubeCamera.updateCubeMap( this.renderer, this.scene );
+            // Postprocess pass
+            this.composer.render(0.1);
+        }
 
-		this.renderer.shadowMapEnabled = false;
-		this.depthPassPlugin.enabled = false;
-        this.composer.render(0.1);
+        this.stats.end();
     };
 
     return Display;
