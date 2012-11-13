@@ -43,27 +43,28 @@ define(function(require) {
             }
             geometry.verticesNeedUpdate = true;
         } else {
-            var cube;
-            mesh = new THREE.Object3D();
+            var merged, cube;
+            merged = new THREE.Geometry();
             geometry = new THREE.CubeGeometry(1, 1, 1);
 
             for (var y = 0; y < this.size; y++) {
                 for (var x = 0; x < this.size; x++) {
-                    cube = new THREE.Mesh(geometry, material);
+                    cube = new THREE.Mesh(geometry, null);
                     cube.position.x = x - 0.5 * this.size;
                     cube.position.y = y - 0.5 * this.size;
                     cube.position.z = this.terrain[y][x] - 0.5;
-                    mesh.add(cube);
+                    THREE.GeometryUtils.merge(merged, cube);
                 }
             }
+
+            mesh = new THREE.Mesh(merged, material);
         }
 
+        mesh.position.set(this.size / 2, this.size / 2, 0);
         mesh.castShadow = mesh.receiveShadow = true;
-        this.addComponent(new Factory.Components.Transform({
-            x: this.size / 2,
-            y: this.size / 2,
-            z: 0
-        }));
+        mesh.matrixAutoUpdate = false;
+        mesh.updateMatrix();
+
         this.addComponent(new Factory.Components.Appearance({ mesh: mesh }));
     };
 
