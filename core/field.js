@@ -3,6 +3,7 @@ define(function(require) {
     var Factory = require('core/factory');
     var EasyStar = require('EasyStar');
     var THREE = require('THREE');
+    var PyramidGeometry = require('lib/pyramidGeometry');
 
     var Brownian = require('util/brownian');
     var kNearestNeighborAverage = require('util/kNearestNeighborAverage');
@@ -18,6 +19,7 @@ define(function(require) {
         this.terrain = [];
 
         this.initializeTerrain();
+        this.decorateTerrain();
         this.initializePath();
         this.initializeResources(2 * Math.sqrt(this.size));
     }
@@ -66,6 +68,25 @@ define(function(require) {
         mesh.updateMatrix();
 
         this.addComponent(new Factory.Components.Appearance({ mesh: mesh }));
+    };
+
+    Field.prototype.decorateTerrain = function() {
+        var N = 500;
+        var color = new THREE.Color();
+        for (var i = 0; i < N; i++) {
+            var w = 1;
+            var h = 2 + Math.random() * 3;
+            var x = Math.floor(Math.random() * 100);
+            var y = Math.floor(Math.random() * 100);
+            var z = this.terrain[y][x];
+            var poly = new PyramidGeometry(w, h);
+            color.setHSV((110 + 40 * Math.random()) / 360, 0.9, 0.3 + 0.4 * Math.random());
+            var material = new THREE.MeshLambertMaterial({ color: color });
+            var mesh = new THREE.Mesh(poly, material);
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.set(x, y, z);
+            this.game.display.add(mesh);
+        }
     };
 
     Field.prototype.initializePath = function() {
