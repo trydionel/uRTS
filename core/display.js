@@ -5,40 +5,30 @@ define(function(require) {
     function Display(width, height) {
         this.width = width;
         this.height = height;
-        this.distance = 25;
-        this.azimuth = 45 * Math.PI / 180;
-        this.altitude = 60 * Math.PI / 180;
-        this.distanceX = this.distance * Math.cos(this.azimuth);
-        this.distanceY = this.distance * Math.sin(this.azimuth);
-        this.cameraHeight = this.distance * Math.sin(this.altitude);
-
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog( 0xffffff, 0.1, 500 );
+        this.canvas = document.getElementById('game');
+    }
 
-        this.initCamera();
+    Display.prototype.initialize = function() {
         this.initLights();
         this.initRenderer();
         this.initPostprocessing();
         this.initStats();
 
-        this.scene.add(this.camera);
-        this.scene.add(new THREE.AmbientLight(0x888888));
-        this.scene.add(this.light);
-        this.scene.add(this.shadow);
-
-        document.getElementById('game').appendChild(this.renderer.domElement);
-    }
-
-    Display.prototype.initCamera = function() {
-        this.camera = new THREE.PerspectiveCamera(45, this.width / this.height, 0.01, 1000);
-        this.camera.up = new THREE.Vector3(0, 0, 1);
+        this.canvas.appendChild(this.renderer.domElement);
+        this.initialized = true;
     };
 
     Display.prototype.initLights = function() {
+        this.ambient = new THREE.AmbientLight(0x888888);
+        this.scene.add(this.ambient);
+
         this.light = new THREE.DirectionalLight(0xffdddd, 0.8);
-        this.light.position.x = 100;
+        this.light.position.x = -50;
+        this.light.position.y = -100;
         this.light.position.z = 50;
-        this.light.castShadow = false;
+        this.light.castShadow = true;
+        this.scene.add(this.light);
 
         this.shadow = new THREE.DirectionalLight(0xffffff);
         this.shadow.position.set( 100, 100, 75 );
@@ -46,14 +36,18 @@ define(function(require) {
 		this.shadow.onlyShadow = true;
 		this.shadow.shadowCameraNear = 0.1;
 		this.shadow.shadowCameraFar = 250;
+        this.scene.add(this.shadow);
     };
 
     Display.prototype.initRenderer = function() {
+        // Add fog needed for Renderer & SSAO
+        this.scene.fog = new THREE.Fog( 0xffffff, 0.1, 500 );
+
         this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         this.renderer.setSize(this.width, this.height);
         this.renderer.setClearColor( this.scene.fog.color, 1 );
         this.renderer.shadowMapEnabled = true;
-        //this.renderer.shadowMapSoft = true;
+        this.renderer.shadowMapSoft = true;
 
         this.renderer.shadowCameraNear = this.camera.near;
         this.renderer.shadowCameraFar = this.camera.far;
@@ -151,7 +145,8 @@ define(function(require) {
 
         // Draw the last pass of the composer to the screen.
         //
-        this.composer.passes[this.composer.passes.length - 1].renderToScreen = true;
+        var finalPass = this.composer.passes[this.composer.passes.length - 1];
+        if (finalPass) finalPass.renderToScreen = true;
     };
 
     Display.prototype.initStats = function() {
@@ -163,22 +158,20 @@ define(function(require) {
         document.body.appendChild( this.stats.domElement );
     };
 
-    Display.prototype.add = function(mesh) {
-        this.scene.add(mesh);
+    Display.prototype.add = function(object) {
+        console.log(object);
+        if (object instanceof THREE.Camera) this.camera = object;
+        this.scene.add(object);
     };
 
-    Display.prototype.remove = function(mesh) {
-        this.scene.remove(mesh);
-    };
-
-    Display.prototype.lookAt = function(position) {
-        this.camera.position.x = position.x - this.distanceX;
-        this.camera.position.y = position.y - this.distanceY;
-        this.camera.position.z = this.cameraHeight;
-        this.camera.lookAt(new THREE.Vector3(position.x, position.y, position.z));
+    Display.prototype.remove = function(object) {
+        if (object instanceof THREE.Camera) this.camera = null;
+        this.scene.remove(object);
     };
 
     Display.prototype.render = function() {
+        if (!this.initialized) this.initialize();
+
         this.stats.begin();
 
         if (!this.postProcessing) {
@@ -189,8 +182,10 @@ define(function(require) {
             this.renderer.render(this.scene, this.camera, this.depthTarget, true);
 
             // Color pass
+            this.renderer.shadowMapEnabled = false;
             this.scene.overrideMaterial = null;
             this.renderer.render(this.scene, this.camera, this.composer.renderTarget2, true);
+            this.renderer.shadowMapEnabled = true;
 
             // Postprocess pass
             this.composer.render(0.1);

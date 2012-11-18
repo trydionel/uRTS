@@ -1,4 +1,8 @@
+/*global performance:true*/
 define(function(require) {
+    require('util/math');
+
+    var Factory = require('core/factory');
     var Field = require('core/field');
     var Player = require('core/player');
     var requestAnimationFrame = require('lib/requestAnimationFrame');
@@ -13,6 +17,9 @@ define(function(require) {
         this.height = 600;
         this.display = new Display(this.width, this.height);
 
+        this.camera = Factory.create('camera', { 'Camera': { 'width': this.width, 'heigth': this.height }});
+        this.addEntity(this.camera);
+
         this.field = new Field(this, 100);
         this.addEntity(this.field);
 
@@ -23,19 +30,17 @@ define(function(require) {
         this.entities.push(this.players[0]);
         this.entities.push(this.players[1]);
 
-        //this.context = this.canvas.getContext('2d');
-        //this.input = new InputManager(this);
-        this.display.lookAt(this.players[0].base.getComponent('Transform'));
+        this.debugList();
     }
 
     Game.prototype.addEntity = function(entity) {
         this.entities.push(entity);
 
         var appearance = entity.getComponent('Appearance');
-        if (appearance) {
-            var mesh = appearance.mesh;
-            this.display.add(mesh);
-        }
+        if (appearance) this.display.add(appearance.mesh);
+
+        var camera = entity.getComponent('Camera');
+        if (camera) this.display.add(camera.camera);
     };
 
     Game.prototype.removeEntity = function(entity) {
@@ -44,10 +49,31 @@ define(function(require) {
             this.entities.splice(index);
 
             var appearance = entity.getComponent('Appearance');
-            if (appearance) {
-                var mesh = appearance.mesh;
-                this.display.remove(mesh);
-            }
+            if (appearance) this.display.remove(appearance.mesh);
+
+            var camera = entity.getComponent('Camera');
+            if (camera) this.display.remove(camera.camera);
+        }
+    };
+
+    Game.prototype.debugList = function() {
+        var html = '<ul>';
+        this.entities.forEach(function(entity, i) {
+            if (entity.tag === 'Resource' || entity.tag === null || entity.tag === 'Camera') return;
+            html += '<li><a class="entity-details" href="#" data-id="' + i + '">' + entity.tag + '</a></li>';
+        });
+        html += '</ul>';
+
+        document.getElementById('debug').innerHTML = html;
+
+        var centerOnEntity = function(e) {
+            var id = e.target.dataset.id;
+            var entity = this.entities[id];
+            this.camera.getComponent('Camera').follow(entity);
+        }.bind(this);
+        var links = document.querySelectorAll('.entity-details');
+        for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener('click', centerOnEntity);
         }
     };
 
