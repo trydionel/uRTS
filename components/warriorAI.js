@@ -2,7 +2,7 @@ define(function() {
     function WarriorAI() {
     }
 
-    WarriorAI.prototype.update = function(entity, dt) {
+    WarriorAI.prototype.fixedUpdate = function(entity, dt) {
         var position = this.entity.getComponent('Transform');
         var path     = this.entity.getComponent('Pathfinding');
 

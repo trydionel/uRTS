@@ -31,11 +31,16 @@ define(function(require) {
         this.selected = false;
     };
 
-    Appearance.prototype.update = function(dt) {
+    Appearance.prototype.update = function(dt, elapsed) {
         var position = this.entity.getComponent('Transform');
         if (!position) return;
 
-        this.mesh.position.set(position.x, position.y, position.z);
+        elapsed = Math.clamp(elapsed, 0, 1);
+        var x = Math.lerp(position.previousX, position.x, elapsed);
+        var y = Math.lerp(position.previousY, position.y, elapsed);
+        var z = Math.lerp(position.previousZ, position.z, elapsed);
+
+        this.mesh.position.set(x, y, z);
     };
 
     return Appearance;

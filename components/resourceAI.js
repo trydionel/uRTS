@@ -2,7 +2,7 @@ define(function() {
     function ResourceAI() {
     }
 
-    ResourceAI.prototype.update = function(dt) {
+    ResourceAI.prototype.fixedUpdate = function(dt) {
         var storage = this.entity.getComponent('Storage');
 
         // Slowly regrow resources

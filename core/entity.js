@@ -1,7 +1,10 @@
 define(function(require) {
+    var id = 0;
+
     function Entity() {
         this.components = {};
         this.tag = null;
+        this.id = id++;
     }
 
     Entity.prototype.addComponent = function(component) {
@@ -22,27 +25,32 @@ define(function(require) {
         }
     };
 
+    Entity.prototype.update = function(dt, elapsed) {
+        this.execute('update', dt, elapsed);
+    };
+
+    Entity.prototype.lateUpdate = function(dt) {
+        this.execute('lateUpdate', dt);
+    };
+
+    Entity.prototype.fixedUpdate = function(dt) {
+        this.execute('fixedUpdate', dt);
+    };
+
     Entity.prototype.broadcast = function(message, data) {
         var method = "on" + message;
-        for (var name in this.components) {
-            var component = this.components[name];
-            if (component[method]) {
-                component[method](data);
-            }
-        }
+        this.execute(method, data);
     };
 
-    Entity.prototype.setTag = function(tag) {
-        this.tag = tag;
-    };
-
-    Entity.prototype.update = function(dt) {
-        for (var name in this.components) {
-            var component = this.components[name];
-            if (component.update) {
-                component.update(dt);
-            }
-        }
+    var slice = Array.prototype.slice;
+    Entity.prototype.execute = function(method) {
+       var args = slice.call(arguments, 1);
+       for (var name in this.components) {
+           var component = this.components[name];
+           if (component[method]) {
+               component[method].apply(component, args);
+           }
+       }
     };
 
     return Entity;

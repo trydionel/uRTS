@@ -86,7 +86,7 @@ define(function(require) {
     };
 
 
-    WorkerAI.prototype.update = function(dt) {
+    WorkerAI.prototype.fixedUpdate = function(dt) {
         this.fsm.handle('update', this.entity);
     };
 

@@ -34,7 +34,7 @@ define(function() {
             Math.abs(this.target.y - position.y) <= 1;
     };
 
-    MovementSystem.prototype.update = function(dt) {
+    MovementSystem.prototype.fixedUpdate = function(dt) {
         var position = this.entity.getComponent('Transform');
         var x = position.x + this.direction.x;
         var y = position.y + this.direction.y;

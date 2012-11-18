@@ -51,50 +51,63 @@ define(function(require) {
         }
     };
 
-    Game.prototype.update = function(dt) {
-        this.entities.forEach(function(entity) {
-            entity.update(dt);
-        });
+    Game.prototype.fixedUpdate = function(dt) {
+        var i = this.entities.length;
+        var entity;
+        while (i) {
+            i--;
+            entity = this.entities[i];
+            entity.fixedUpdate(dt);
+        }
     };
 
-    Game.prototype.render = function(context, dt, elapsed) {
-        this.display.render();
-        //this.input.render(context);
+    Game.prototype.update = function(dt, elapsed) {
+        var i = this.entities.length;
+        while (i) {
+            i--;
+            this.entities[i].update(dt, elapsed);
+        }
     };
 
     Game.prototype.run = function() {
         this.playing = true;
 
-        var t0 = +new Date() - 16;
+        var t0 = performance.now() - 16;
         var game = this;
         var logicRate = 200; // 5fps
         var lastLogicTick;
 
-        //this.input.bind();
         this.entities.forEach(function(entity) {
             entity.broadcast('Start', game);
         });
 
         var render = function(t) {
-            var dt = t - t0;
-            var elapsed = (t - lastLogicTick) / logicRate;
-            if (game.playing) requestAnimationFrame(render);
-            game.render(game.context, dt, elapsed);
+            try {
+                var dt = t - t0;
+                var elapsed = (t - lastLogicTick) / logicRate;
+                t0 = t;
+
+                if (game.playing) requestAnimationFrame(render);
+                game.update(dt, elapsed);
+                game.display.render();
+            } catch(e) {
+                game.stop();
+                throw e;
+            }
         };
-        render(16);
+        render(performance.now());
 
         var logic = function() {
             var dt;
-            lastLogicTick = +new Date();
+            lastLogicTick = performance.now();
             dt = lastLogicTick - t0;
-            game.update(dt);
             if (game.playing) setTimeout(logic, logicRate);
+            game.fixedUpdate(dt);
         };
         logic();
     };
 
     Game.prototype.stop = function() {
-        //this.input.unbind();
         this.playing = false;
     };
 
