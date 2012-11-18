@@ -67,6 +67,7 @@ define(function(require) {
             i--;
             this.entities[i].update(dt, elapsed);
         }
+        InputManager.update();
     };
 
     Game.prototype.run = function() {
@@ -77,6 +78,7 @@ define(function(require) {
         var logicRate = 200; // 5fps
         var lastLogicTick;
 
+        InputManager.observe(document.body);
         this.entities.forEach(function(entity) {
             entity.broadcast('Start', game);
         });
@@ -108,6 +110,7 @@ define(function(require) {
     };
 
     Game.prototype.stop = function() {
+        InputManager.detach();
         this.playing = false;
     };
 
