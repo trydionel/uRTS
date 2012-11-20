@@ -17,7 +17,7 @@ define(function(require) {
         this.height = 600;
         this.display = new Display(this.width, this.height);
 
-        this.camera = Factory.create('camera', { 'Camera': { 'width': this.width, 'heigth': this.height }});
+        this.camera = Factory.create('camera', { 'Camera': { 'width': this.width, 'height': this.height }});
         this.addEntity(this.camera);
 
         this.field = new Field(this, 100);
