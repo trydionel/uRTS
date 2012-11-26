@@ -1,0 +1,9 @@
+{
+    "name": "Field",
+    "tag": "Field",
+    "components": {
+        "TerrainGenerator": {
+            "size": 100
+        }
+    }
+}
