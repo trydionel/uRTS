@@ -1,25 +1,44 @@
 define(function(require) {
     var THREE = require('THREE');
     var Stats = require('Stats');
+    var Factory = require('core/factory');
+    var async = require('lib/async');
 
-    function Display(width, height) {
+    function Display(game, width, height) {
+        this.game = game;
         this.width = width;
         this.height = height;
         this.scene = new THREE.Scene();
         this.canvas = document.getElementById('game');
     }
 
-    Display.prototype.initialize = function() {
-        this.initLights();
-        this.initRenderer();
-        this.initPostprocessing();
-        this.initStats();
+    Display.prototype.initialize = function(complete) {
+        var display = this;
+        var wrap = function(fn) {
+            return function(next) {
+                fn.apply(display, [next]);
+            };
+        };
 
-        this.canvas.appendChild(this.renderer.domElement);
-        this.initialized = true;
+        async.waterfall([
+            wrap(display.initCamera),
+            wrap(display.initLights),
+            wrap(display.initRenderer),
+            wrap(display.initPostprocessing),
+            wrap(display.initStats)
+        ], function(err) {
+            if (err) throw err;
+            display.canvas.appendChild(display.renderer.domElement);
+            complete();
+        });
     };
 
-    Display.prototype.initLights = function() {
+    Display.prototype.initCamera = function(next) {
+        Factory.create('camera', { 'Camera': { 'width': this.width, 'height': this.height }});
+        next();
+    };
+
+    Display.prototype.initLights = function(next) {
         this.ambient = new THREE.AmbientLight(0x888888);
         this.scene.add(this.ambient);
 
@@ -37,9 +56,11 @@ define(function(require) {
 		this.shadow.shadowCameraNear = 0.1;
 		this.shadow.shadowCameraFar = 250;
         this.scene.add(this.shadow);
+
+        next();
     };
 
-    Display.prototype.initRenderer = function() {
+    Display.prototype.initRenderer = function(next) {
         // Add fog needed for Renderer & SSAO
         this.scene.fog = new THREE.Fog( 0xffffff, 0.1, 500 );
 
@@ -62,9 +83,11 @@ define(function(require) {
         this.renderer.shadowMapDarkness = 0.5;
         this.renderer.shadowMapWidth = 1024;
         this.renderer.shadowMapHeight = 1024;
+
+        next();
     };
 
-    Display.prototype.initPostprocessing = function() {
+    Display.prototype.initPostprocessing = function(next) {
         this.postProcessing = true;
 
         // FIXME: Need to fix effect pipeline so that I can scale down the
@@ -147,19 +170,22 @@ define(function(require) {
         //
         var finalPass = this.composer.passes[this.composer.passes.length - 1];
         if (finalPass) finalPass.renderToScreen = true;
+
+        next();
     };
 
-    Display.prototype.initStats = function() {
+    Display.prototype.initStats = function(next) {
         this.stats = new Stats();
         this.stats.domElement.style.position = 'absolute';
         this.stats.domElement.style.right = '0px';
         this.stats.domElement.style.bottom = '0px';
 
         document.body.appendChild( this.stats.domElement );
+
+        next();
     };
 
     Display.prototype.add = function(object) {
-        console.log(object);
         if (object instanceof THREE.Camera) this.camera = object;
         this.scene.add(object);
     };
@@ -170,8 +196,6 @@ define(function(require) {
     };
 
     Display.prototype.render = function() {
-        if (!this.initialized) this.initialize();
-
         this.stats.begin();
 
         if (!this.postProcessing) {

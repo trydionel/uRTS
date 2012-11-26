@@ -2,6 +2,7 @@ define(function(require) {
     var FogOfWar = require('core/fogOfWar');
     var Factory = require('core/factory');
     var Entity = require('core/entity');
+    var async = require('lib/async');
 
     function Player(game, color, field, options) {
         Entity.call(this);
@@ -12,7 +13,7 @@ define(function(require) {
         this.field = field;
         this.human = options.human;
         this.entities = [];
-        this.fog = new FogOfWar(this.field.size, this.human);
+        this.fog = new FogOfWar(this.field.getComponent('TerrainGenerator').size, this.human);
         this.game.addEntity(this.fog);
 
         this.initializeBase();
@@ -23,36 +24,34 @@ define(function(require) {
     Player.prototype = new Entity();
 
     Player.prototype.initializeBase = function() {
-        var x = Math.floor(Math.random() * (this.field.size - 4)) + 2;
-        var y = Math.floor(Math.random() * (this.field.size - 4)) + 2;
+        var terrain = this.field.getComponent('TerrainGenerator'); // FIXME: ugh.
+        var x = Math.floor(Math.random() * (terrain.size - 4)) + 2;
+        var y = Math.floor(Math.random() * (terrain.size - 4)) + 2;
+
         this.base = Factory.create('base', { field: this.field, player: this, Transform: { x: x, y: y }});
-        this.game.addEntity(this.base);
 
         // Create opening in terrain and fog-of-war around the base
         this.clearFog(x, y, 6);
-        this.field.clearTiles(x, y, 5);
+        //this.field.clearTiles(x, y, 5);
     };
 
-    Player.prototype.initializeWorkers = function(n) {
-        var worker, x, y, position = this.base.getComponent('Transform');
+    Player.prototype.initializeWorkers = function(n, cb) {
+        var worker, x, y;
         for (var i = 0; i < n; i++) {
-            x = position.x + Math.floor(Math.random() * 4 - 2);
-            y = position.y + Math.floor(Math.random() * 4 - 2);
-            //worker = Factory.worker(this.field, this, x, y);
+            x = this.base.x + Math.floor(Math.random() * 4 - 2);
+            y = this.base.y + Math.floor(Math.random() * 4 - 2);
             worker = Factory.create('worker', { field: this.field, player: this, 'Transform': { x: x, y: y }});
             this.entities.push(worker);
-            this.game.addEntity(worker);
         }
     };
 
-    Player.prototype.initializeWarriors = function(n) {
-        var warrior, x, y, position = this.base.getComponent('Transform');
+    Player.prototype.initializeWarriors = function(n, cb) {
+        var warrior, x, y;
         for (var i = 0; i < n; i++) {
-            x = position.x + Math.floor(Math.random() * 4 - 2);
-            y = position.y + Math.floor(Math.random() * 4 - 2);
+            x = this.base.x + Math.floor(Math.random() * 4 - 2);
+            y = this.base.y + Math.floor(Math.random() * 4 - 2);
             warrior = Factory.create('warrior', { field: this.field, player: this, 'Transform': { x: x, y: y } });
             this.entities.push(warrior);
-            this.game.addEntity(warrior);
         }
     };
 
