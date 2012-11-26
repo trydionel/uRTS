@@ -7,13 +7,13 @@ require.config({
         'EasyStar': 'lib/easystar-0.1.0.min',
         'SimplexNoise': 'lib/perlin-noise-simplex',
         'THREE': 'lib/three.max',
-        'Stats': 'lib/stats.min'
+        'Stats': 'lib/stats.min',
+        'async': 'lib/async'
     }
 });
 
 require(['core/game'], function(Game) {
     var game = window.game = new Game();
-    game.run();
 
     document.getElementById('start').addEventListener('click', function() {
         game.run();
