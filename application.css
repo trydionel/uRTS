@@ -23,5 +23,10 @@ section.primary {
 }
 
 section.sidebar {
+    display: none;
+    width: 25%;
+}
+
+section#debug {
     width: 25%;
 }
