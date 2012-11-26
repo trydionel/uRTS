@@ -1,5 +1,6 @@
 define(function() {
     var EPSILON = 0.01;
+    var STOP = { x: 0, y: 0, z: 0 };
 
     function MovementSystem(options) {
         options = options || {};
@@ -7,6 +8,11 @@ define(function() {
         this.direction = { x: 0, y: 0 };
         this.target = null;
     }
+
+    MovementSystem.prototype.onStart = function() {
+       this.position = this.entity.getComponent('Transform');
+       this.terrain = this.entity.field.getComponent('Terrain');
+    };
 
     MovementSystem.prototype.isMoving = function() {
         return this.direction.x !== 0 && this.direction.y !== 0;
@@ -27,24 +33,22 @@ define(function() {
     };
 
     MovementSystem.prototype.atTarget = function() {
-        var position = this.entity.getComponent('Transform');
         //var distance = Math.sqrt(Math.pow(position.x - this.target.x, 2) + Math.pow(position.y - this.target.y, 2));
         return this.target &&
-            Math.abs(this.target.x - position.x) <= 1 &&
-            Math.abs(this.target.y - position.y) <= 1;
+            Math.abs(this.target.x - this.position.x) <= 1 &&
+            Math.abs(this.target.y - this.position.y) <= 1;
     };
 
     MovementSystem.prototype.fixedUpdate = function(dt) {
-        var position = this.entity.getComponent('Transform');
-        var x = position.x + this.direction.x;
-        var y = position.y + this.direction.y;
-        var z = this.entity.field.terrain[y][x] + 0.5;
+        var x = this.position.x + this.direction.x;
+        var y = this.position.y + this.direction.y;
+        var z = this.terrain.data[y][x] + 0.5;
 
-        position.set(x, y, z);
+        this.position.set(x, y, z);
 
         if (this.atTarget()) {
             this.target = null;
-            this.move({ x: 0, y: 0, z: 0 });
+            this.move(STOP);
             this.entity.broadcast('TargetReached');
         }
     };

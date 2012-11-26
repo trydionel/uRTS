@@ -2,26 +2,25 @@ define(function() {
     function WarriorAI() {
     }
 
+    WarriorAI.prototype.onStart = function() {
+        this.position = this.entity.getComponent('Transform');
+        this.path     = this.entity.getComponent('Pathfinding');
+    };
+
     WarriorAI.prototype.fixedUpdate = function(entity, dt) {
-        var position = this.entity.getComponent('Transform');
-        var path     = this.entity.getComponent('Pathfinding');
+        this.entity.player.clearFog(this.position.x, this.position.y, 3);
 
-        this.entity.player.clearFog(position.x, position.y, 3);
-
-        if (path.isPathing()) {
-            path.move();
+        if (this.path.isPathing()) {
+            this.path.move();
         } else {
             this.explore();
         }
     };
 
     WarriorAI.prototype.explore = function() {
-        var position = this.entity.getComponent('Transform');
-        var path     = this.entity.getComponent('Pathfinding');
-
-        var destX = position.x + Math.round(Math.random() * 10 - 5);
-        var destY = position.y + Math.round(Math.random() * 10 - 5);
-        path.path = this.entity.field.search(position.x, position.y, destX, destY);
+        var destX = this.position.x + Math.round(Math.random() * 10 - 5);
+        var destY = this.position.y + Math.round(Math.random() * 10 - 5);
+        this.path.search({ x: destX, y: destY });
     };
 
     return WarriorAI;

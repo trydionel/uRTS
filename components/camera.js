@@ -59,7 +59,7 @@ define(function(require) {
         this.matrix.multiplyVector3(tmp.normalize().multiplyScalar(this.speed));
 
         return tmp;
-    }
+    };
 
     return Camera;
 });

@@ -5,12 +5,16 @@ define(function() {
         this.pathIndex = 0;
     }
 
-    Pathfinding.prototype.search = function(target) {
-        var position = this.entity.getComponent('Transform');
+    Pathfinding.prototype.onStart = function() {
+        this.position = this.entity.getComponent('Transform');
+        this.motor    = this.entity.getComponent('MovementSystem');
+        this.terrain  = this.entity.field.getComponent('Terrain');
+    };
 
+    Pathfinding.prototype.search = function(target) {
         this.setTarget(target);
         if (this.target) {
-            this.path = this.entity.field.search(position.x, position.y, this.target.x, this.target.y);
+            this.path = this.terrain.search(this.position.x, this.position.y, this.target.x, this.target.y);
             this.pathIndex = 0;
         }
     };
@@ -18,11 +22,10 @@ define(function() {
     Pathfinding.prototype.move = function() {
         if (!this.path) return;
 
-        var motor = this.entity.getComponent('MovementSystem');
-        if (!motor.isMoving()) {
+        if (!this.motor.isMoving()) {
             var x = this.path[this.pathIndex].x;
             var y = this.path[this.pathIndex].y;
-            motor.moveTo({ x: x, y: y });
+            this.motor.moveTo({ x: x, y: y });
         }
     };
 

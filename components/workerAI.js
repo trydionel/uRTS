@@ -42,6 +42,12 @@ define(function(require) {
         });
     }
 
+    WorkerAI.prototype.onStart = function() {
+        this.terrain  = this.entity.field.getComponent('Terrain');
+        this.position = this.entity.getComponent('Transform');
+        this.path     = this.entity.getComponent('Pathfinding');
+    };
+
     WorkerAI.prototype.onEmpty = function() {
         this.fsm.transition('idle');
     };
@@ -57,19 +63,17 @@ define(function(require) {
     };
 
     WorkerAI.prototype.search = function(tag) {
-        var position = this.entity.getComponent('Transform');
-        var path     = this.entity.getComponent('Pathfinding');
         var prevTarget = this.target;
 
         if (tag === 'resource') {
-            this.target = this.entity.field.nearbyResource(this.entity.player, position.x, position.y);
+            this.target = this.terrain.nearbyResource(this.entity.player, this.position.x, this.position.y);
         } else if (tag === 'base') {
             this.target = this.entity.player.base;
         }
 
         if (this.target && this.target !== prevTarget) {
-            path.search(this.target.getComponent('Transform'));
-            if (path) {
+            this.path.search(this.target.getComponent('Transform'));
+            if (this.target) {
                 this.fsm.transition('moving');
             }
         }
@@ -78,11 +82,10 @@ define(function(require) {
     WorkerAI.prototype.atTarget = function() {
         if (!this.target) return;
 
-        var position = this.entity.getComponent('Transform');
         var destination = this.target.getComponent('Transform');
 
-        return Math.abs(destination.x - position.x) <= 1 &&
-            Math.abs(destination.y - position.y) <= 1;
+        return Math.abs(destination.x - this.position.x) <= 1 &&
+            Math.abs(destination.y - this.position.y) <= 1;
     };
 
 

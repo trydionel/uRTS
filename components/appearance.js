@@ -7,9 +7,14 @@ define(function(require) {
         this.color = options.color;
         this.size = options.size || 1;
         this.selected = false;
+        this.position = null;
 
         this.mesh = options.mesh || this.genericMesh();
     }
+
+    Appearance.prototype.onStart = function() {
+        this.position = this.entity.getComponent('Transform');
+    };
 
     Appearance.prototype.genericMesh = function() {
         var color = parseInt(this.color.replace('#', ''), 16);
@@ -32,13 +37,12 @@ define(function(require) {
     };
 
     Appearance.prototype.update = function(dt, elapsed) {
-        var position = this.entity.getComponent('Transform');
-        if (!position) return;
+        if (!this.position) return;
 
-        elapsed = Math.clamp(elapsed, 0, 1);
-        var x = Math.lerp(position.previousX, position.x, elapsed);
-        var y = Math.lerp(position.previousY, position.y, elapsed);
-        var z = Math.lerp(position.previousZ, position.z, elapsed);
+        var x, y, z;
+        x = Math.lerp(this.position.previousX, this.position.x, elapsed);
+        y = Math.lerp(this.position.previousY, this.position.y, elapsed);
+        z = Math.lerp(this.position.previousZ, this.position.z, elapsed);
 
         this.mesh.position.set(x, y, z);
     };
