@@ -1,4 +1,5 @@
 require.config({
+    baseUrl: '../..',
     paths: {
         'underscore': 'lib/underscore',
         'machina': 'lib/machina',
@@ -12,9 +13,9 @@ require.config({
     }
 });
 
-require(['core/game', 'scenes/battle'], function(Game, BattleScene) {
+require(['core/game', 'experiments/goap/scene'], function(Game, GOAPScene) {
     var game = window.game = new Game();
-    game.scene = new BattleScene(game);
+    game.scene = new GOAPScene(game);
     game.load();
 
     document.getElementById('start').addEventListener('click', function() {

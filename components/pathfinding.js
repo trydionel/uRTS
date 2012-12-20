@@ -3,6 +3,7 @@ define(function() {
         this.target = null;
         this.path = null;
         this.pathIndex = 0;
+        this.complete = false;
     }
 
     Pathfinding.prototype.onStart = function() {
@@ -16,6 +17,7 @@ define(function() {
         if (this.target) {
             this.path = this.terrain.search(this.position.x, this.position.y, this.target.x, this.target.y);
             this.pathIndex = 0;
+            this.complete = false;
         }
     };
 
@@ -31,6 +33,10 @@ define(function() {
 
     Pathfinding.prototype.isPathing = function() {
         return !!this.path;
+    };
+
+    Pathfinding.prototype.isComplete = function() {
+        return this.complete;
     };
 
     Pathfinding.prototype.setTarget = function(target) {
@@ -54,6 +60,7 @@ define(function() {
     };
 
     Pathfinding.prototype.onPathComplete = function() {
+        this.complete = true;
         this.clearPath();
     };
 

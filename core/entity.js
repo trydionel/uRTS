@@ -5,6 +5,7 @@ define(function(require) {
         this.components = {};
         this.tag = null;
         this.id = id++;
+        this.memory = {};
     }
 
     Entity.prototype.addComponent = function(component) {
@@ -19,7 +20,9 @@ define(function(require) {
     };
 
     Entity.prototype.removeComponent = function(component) {
-        if (component.entity === this) {
+        if (typeof component == "string") {
+            delete this.components[component];
+        } else if (component.entity === this) {
             component.entity = null;
             delete this.components[component.constructor.name];
         }

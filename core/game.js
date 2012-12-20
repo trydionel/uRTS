@@ -4,7 +4,6 @@ define(function(require) {
     var requestAnimationFrame = require('lib/requestAnimationFrame');
     var InputManager = require('core/inputManager');
     var Display = require('core/display');
-    var BattleScene = require('scenes/battle');
     var Factory = require('core/factory');
     var async = require('lib/async');
 
@@ -16,26 +15,37 @@ define(function(require) {
         this.width = 800;
         this.height = 600;
         this.display = new Display(this, this.width, this.height);
-        this.scene = new BattleScene(this);
+    }
 
+    Game.prototype.load = function() {
         var game = this;
         async.series([
             function(next) {
+                console.log("Preloading factory resources...");
+                console.time('duration');
                 Factory.storage = game;
                 Factory.preloadResources(next);
+                console.timeEnd('duration');
             },
             function(next) {
+                console.log("Initializing rendering manager...");
+                console.time('duration');
                 game.display.initialize(next);
+                console.timeEnd('duration');
             },
             function(next) {
+                console.log("Loading scene...");
+                console.time('duration');
                 game.scene.onLoad(next);
                 game.scene.load();
+                console.timeEnd('duration');
             }
         ], function() {
+            console.log("Loaded!");
             game.loaded = true;
             game.run();
         });
-    }
+    };
 
     Game.prototype.addEntity = function(entity) {
         this.entities.push(entity);
