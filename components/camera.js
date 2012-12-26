@@ -30,11 +30,17 @@ define(function(require) {
     };
 
     Camera.prototype.follow = function(entity) {
+        var position = entity.getComponent('Transform');
         var appearance = entity.getComponent('Appearance');
-        if (!appearance) return;
 
-        var mesh = appearance.mesh;
-        this.target = mesh.position;
+        if (appearance) {
+            var mesh = appearance.mesh;
+            this.target = mesh.position;
+        } else if (position) {
+            this.target = position;
+        } else {
+            console.log("No followable position on ", entity);
+        }
     };
 
     Camera.prototype.update = function(dt, elapsed) {
