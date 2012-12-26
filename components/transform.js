@@ -10,9 +10,9 @@ define(function() {
         this.previousX = this.x;
         this.previousY = this.y;
         this.previousZ = this.z;
-        this.x = x || this.previousX;
-        this.y = y || this.previousY;
-        this.z = z || this.previousZ;
+        this.x = typeof x === 'undefined' ? this.previousX : x;
+        this.y = typeof y === 'undefined' ? this.previousY : y;
+        this.z = typeof z === 'undefined' ? this.previousZ : z;
     };
 
     return Transform;
