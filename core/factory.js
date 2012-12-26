@@ -5,7 +5,7 @@ define(function(require) {
 
     function Factory() {
         this.storage = null;
-        this.prefabs = {};
+        this.prefabs = { generic: {} };
         this.components = {};
     }
 
