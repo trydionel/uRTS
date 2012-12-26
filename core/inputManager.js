@@ -43,7 +43,9 @@ define(function(require) {
             W: "panUp",
             A: "panLeft",
             S: "panDown",
-            D: "panRight"
+            D: "panRight",
+            Q: "rotateLeft",
+            E: "rotateRight"
         };
     };
 

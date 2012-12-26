@@ -38,6 +38,14 @@ define(function(require) {
     };
 
     Camera.prototype.update = function(dt, elapsed) {
+        var rotation = Input.rotateLeft ? 1 : Input.rotateRight ? -1 : 0;
+        var dr = 0.017 * rotation; // ~1deg / frame
+        if (dr) {
+            this.azimuth += dr;
+            this.distanceX = this.distance * Math.cos(this.azimuth);
+            this.distanceY = this.distance * Math.sin(this.azimuth);
+        }
+
         var pan = this.pan();
         if (pan) {
             this.target = null;
