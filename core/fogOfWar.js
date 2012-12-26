@@ -1,18 +1,20 @@
 define(function(require) {
     var THREE = require('THREE');
-    var Factory = require('core/factory');
+    var Entity = require('core/entity');
+    var Transform = require('components/transform');
+    var Appearance = require('components/appearance');
 
     var FOG_MASK = 1;
 
     function FogOfWar(size, visible) {
-        Factory.Entity.call(this);
+        Entity.call(this);
 
         this.size = size;
         this.visible = visible;
         this.initializeFog();
     }
 
-    FogOfWar.prototype = new Factory.Entity();
+    FogOfWar.prototype = new Entity();
 
     FogOfWar.prototype.initializeFog = function() {
         var row, fog = [];
@@ -24,6 +26,7 @@ define(function(require) {
             fog.push(row);
         }
         this.fog = fog;
+        return;
         if (!this.visible) return;
 
         this.buildTexture();
@@ -34,12 +37,12 @@ define(function(require) {
         });
         var mesh = new THREE.Mesh(geometry, material);
 
-        this.addComponent(new Factory.Components.Transform({
+        this.addComponent(new Transform({
             x: this.size / 2,
             y: this.size / 2,
-            z: 5
+            z: 3
         }));
-        this.addComponent(new Factory.Components.Appearance({ mesh: mesh }));
+        this.addComponent(new Appearance({ mesh: mesh }));
     };
 
     FogOfWar.prototype.presentAt = function(x, y) {
@@ -61,7 +64,7 @@ define(function(require) {
                         changed = (current !== updated);
 
                         this.fog[ty][tx] = updated;
-                        if (changed && this.texture) this.updateTexture(x, y, updated);
+                        if (changed && this.texture) this.updateTexture(tx, ty, updated);
                     }
                 }
             }
@@ -74,7 +77,8 @@ define(function(require) {
         var gray = 32, r = gray, g = gray, b = gray;
         for (var y = 0; y < this.size; y++) {
             for (var x = 0; x < this.size; x++) {
-                var i = this.size * y + x;
+                var iy = this.size - y - 1; // invert y axis
+                var i = this.size * iy + x;
                 var a = this.presentAt(x, y) ? 255 : 0;
                 colors[4 * i + 0] = r;
                 colors[4 * i + 1] = b;
@@ -90,7 +94,7 @@ define(function(require) {
     };
 
     FogOfWar.prototype.updateTexture = function(x, y, mask) {
-        var i = this.size * y + x;
+        var i = this.size * (this.size - y - 1) + x;
         var alpha = mask === FOG_MASK ? 255 : 0;
         this.textureData[4 * i + 3] = alpha;
         this.texture.needsUpdate = true;
