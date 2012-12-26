@@ -90,5 +90,13 @@ define(function(require) {
         }
     };
 
+    Terrain.prototype.at = function(x, y) {
+        if (x < 0 || x >= this.size || y < 0 || y >= this.size) {
+            return undefined;
+        } else {
+            return this.data[y][x];
+        }
+    };
+
     return Terrain;
 });

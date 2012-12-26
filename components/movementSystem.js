@@ -42,7 +42,7 @@ define(function() {
     MovementSystem.prototype.fixedUpdate = function(dt) {
         var x = this.position.x + this.direction.x;
         var y = this.position.y + this.direction.y;
-        var z = this.terrain.data[y][x] + 0.5;
+        var z = (this.terrain.at(x, y) || 0) + 0.5;
 
         this.position.set(x, y, z);
 
