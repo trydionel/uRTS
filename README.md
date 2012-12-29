@@ -22,5 +22,5 @@ once it was big enough.
 - http://grail.cs.washington.edu/projects/crowd-flows/continuum-crowds.pdf
 - http://processingjs.org/learning/topic/flocking/
 - http://dice.se/wp-content/uploads/GDC12_Terrain_in_Battlefield3.pdf
-- (David Pittman's GOAP Masters Thesis)[https://docs.google.com/viewer?a=v&q=cache:LDqL1XebNe4J:www.dphrygian.com/bin/David-Pittman-GOAP-Masters-Thesis.doc+&hl=en&gl=us&pid=bl&srcid=ADGEESh9buMYzGAD1ON759QRE-bE5wC2ND33G6oa26ehiN2kFdbgUzXkWLw1VAlSmmlGk2N_ilpfJJNSAVBfVM8ggDFSQXq7zaHZD_K-dTCsW1t4clGWTY006HTp9dkzbQwtXUeKg12N&sig=AHIEtbRrT1vN5x0WFfgZAyI__285_M0T3Q]
+- [David Pittman's GOAP Masters Thesis](https://docs.google.com/viewer?a=v&q=cache:LDqL1XebNe4J:www.dphrygian.com/bin/David-Pittman-GOAP-Masters-Thesis.doc+&hl=en&gl=us&pid=bl&srcid=ADGEESh9buMYzGAD1ON759QRE-bE5wC2ND33G6oa26ehiN2kFdbgUzXkWLw1VAlSmmlGk2N_ilpfJJNSAVBfVM8ggDFSQXq7zaHZD_K-dTCsW1t4clGWTY006HTp9dkzbQwtXUeKg12N&sig=AHIEtbRrT1vN5x0WFfgZAyI__285_M0T3Q)
 - http://web.media.mit.edu/~jorkin/gdc2006_orkin_jeff_fear.pdf
