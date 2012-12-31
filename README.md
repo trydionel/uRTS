@@ -8,6 +8,35 @@ and
 <a href="https://c9.io/trydionel/urts">Cloud9</a>
 once it was big enough.
 
+## Architecture
+
+### Game
+Central coordinator. Manages configuration and running of all game systems.
+
+### Systems
+Controls various aspects of game, such as rendering, interaction, and AI.
+
+#### Scene
+Defines the entities and systems needed for a particular configuration of the game.
+
+#### Input
+Collects raw keyboard/mouse input and translates it into meaningful game control.
+
+#### GUI
+Draws the user interface details and sets up e.g., button controls.
+
+#### Display
+WebGL/THREE.js entity rendering.
+
+### Entity/Component Framework
+Unity3D-inspired entity/component framework.
+
+#### Entity
+#### Component
+#### Factory
+#### Component Index
+
+
 ## Todo
 - Expand terrain generation, especially feature selection (trees, water, rocks)
 - Add interesting low-poly meshes. Rendering/shading very important here.
