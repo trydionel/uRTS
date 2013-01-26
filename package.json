@@ -11,7 +11,8 @@
       "easystar-0.1.0.min": "github:prettymuchbryce/easystarjs/master#easystar-0.1.0.min.js",
       "perlin-noise-simplex": "https://raw.github.com/gist/304522/2e0b128e25655ef088c9d1f9767ae17f732c15f1/perlin-noise-simplex.js",
       "stats.min": "github:mrdoob/stats.js/master#build/stats.min.js",
-      "async": "github:caolan/async/v0.1.22"
+      "async": "github:caolan/async/v0.1.22",
+      "mediator": "github:ajacksified/Mediator.js/master#lib/mediator.js"
     }
   }
 }
