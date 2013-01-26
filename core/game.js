@@ -53,21 +53,12 @@ define(function(require) {
         // Ensure the 'Start' event is triggered on new entities, even after the
         // initial loading phase has completed.
         if (this.loaded) entity.broadcast('Start');
-
-        var camera = entity.getComponent('Camera');
-        if (camera) this.display.add(camera.camera);
     };
 
     Game.prototype.removeEntity = function(entity) {
         var index = this.entities.indexOf(entity);
         if (index != -1) {
             this.entities.splice(index, 1);
-
-            var appearance = entity.getComponent('Appearance');
-            if (appearance) this.display.remove(appearance.mesh);
-
-            var camera = entity.getComponent('Camera');
-            if (camera) this.display.remove(camera.camera);
         }
     };
 

@@ -3,6 +3,7 @@ define(function(require) {
     var Stats = require('Stats');
     var Factory = require('core/factory');
     var async = require('lib/async');
+    var EventBus = require('core/eventBus');
 
     function Display(game, width, height) {
         this.game = game;
@@ -10,6 +11,9 @@ define(function(require) {
         this.height = height;
         this.scene = new THREE.Scene();
         this.canvas = document.getElementById('game');
+
+        EventBus.subscribe('MeshAdded', this.add.bind(this));
+        EventBus.subscribe('MeshRemoved', this.remove.bind(this));
     }
 
     Display.prototype.initialize = function(complete) {
@@ -34,8 +38,12 @@ define(function(require) {
     };
 
     Display.prototype.initCamera = function(next) {
+        var display = this;
+        EventBus.subscribe('CameraLoaded', function(camera) {
+            display.add(camera.camera);
+            next();
+        });
         Factory.create('camera', { 'Camera': { 'width': this.width, 'height': this.height }});
-        next();
     };
 
     Display.prototype.initLights = function(next) {

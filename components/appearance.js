@@ -1,6 +1,7 @@
 define(function(require) {
 
     var THREE = require('THREE');
+    var EventBus = require('core/eventBus');
 
     function Appearance(options) {
         options = options || {};
@@ -13,7 +14,16 @@ define(function(require) {
     }
 
     Appearance.prototype.onStart = function() {
+        // Store a reference back to the entity on the mesh
+        this.mesh.entity = this.entity;
+
         this.position = this.entity.getComponent('Transform');
+
+        EventBus.publish('MeshAdded', this.mesh);
+    };
+
+    Appearance.prototype.onRemove = function() {
+        EventBus.publish('MeshRemoved', this.mesh);
     };
 
     Appearance.prototype.genericMesh = function() {

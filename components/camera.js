@@ -1,6 +1,7 @@
 define(function(require) {
     var THREE = require('THREE');
     var Input = require('core/inputManager');
+    var EventBus = require('core/eventBus');
 
     function Camera(options) {
         this.width = options.width || window.innerWidth;
@@ -20,6 +21,8 @@ define(function(require) {
         this.target = null;
 
         this.lookAt(new THREE.Vector3(0, 0, 0));
+
+        EventBus.publish('CameraLoaded', this);
     }
 
     Camera.prototype.lookAt = function(position) {
