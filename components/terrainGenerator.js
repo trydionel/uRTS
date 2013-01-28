@@ -19,10 +19,13 @@ define(function(require) {
     // the generator component.
     //
     TerrainGenerator.prototype.onStart = function() {
+        console.log("Generating terrain");
         this.generate();
         this.decorate();
 
         this.entity.addComponent(new Appearance({ mesh: this.mesh }));
+        this.entity.getComponent('Appearance').onStart();
+
         this.entity.addComponent(new Terrain({
             size: this.size,
             data: this.terrain
@@ -66,6 +69,7 @@ define(function(require) {
             mesh = new THREE.Mesh(merged, material);
         }
 
+        mesh.name = "Terrain";
         mesh.position.set(this.size / 2, this.size / 2, 0);
         mesh.castShadow = mesh.receiveShadow = true;
         mesh.matrixAutoUpdate = false;

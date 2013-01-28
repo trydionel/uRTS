@@ -8,7 +8,8 @@ require.config({
         'SimplexNoise': 'lib/perlin-noise-simplex',
         'THREE': 'lib/three.max',
         'Stats': 'lib/stats.min',
-        'async': 'lib/async'
+        'async': 'lib/async',
+        'mediator': 'lib/mediator'
     }
 });
 
