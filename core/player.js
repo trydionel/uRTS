@@ -12,9 +12,10 @@ define(function(require) {
         this.color = color;
         this.field = field;
         this.human = options.human;
+        this.race = options.race || "human";
         this.entities = [];
         this.fog = new FogOfWar(this.field.getComponent('TerrainGenerator').size, this.human);
-        this.game.addEntity(this.fog);
+        this.game.scene.addEntity(this.fog);
 
         this.initializeBase();
         this.initializeWorkers(3);

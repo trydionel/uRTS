@@ -1,5 +1,7 @@
 require.config({
     paths: {
+        'jquery': 'lib/jquery',
+        'mustache': 'lib/mustache',
         'underscore': 'lib/underscore',
         'machina': 'lib/machina',
         'text': 'lib/text',

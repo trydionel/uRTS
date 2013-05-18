@@ -21,11 +21,11 @@ define(function(require) {
 
         var player1 = new Player(game, 'blue', game.field, { human: true });
         game.players.push(player1);
-        game.entities.push(player1);
+        this.addEntity(player1);
 
         var player2 = new Player(game, 'red', game.field);
         game.players.push(player2);
-        game.addEntity(player2);
+        this.addEntity(player2);
 
         scene.loaded();
     };

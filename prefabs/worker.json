@@ -1,6 +1,11 @@
 {
     "name": "Worker",
     "tag": "Worker",
+    "build": {
+        "race": "human",
+        "building": "Base",
+        "cost": 50
+    },
     "components": {
         "Transform": {},
         "MovementSystem": {
@@ -10,6 +15,9 @@
         "Storage": {
             "initial": 0,
             "capacity": 10
+        },
+        "Health": {
+            "max": 30
         },
         "WorkerAI": {},
         "Appearance": {

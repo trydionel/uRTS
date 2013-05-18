@@ -203,7 +203,7 @@ define(function(require) {
         this.scene.remove(object);
     };
 
-    Display.prototype.render = function() {
+    Display.prototype.update = function() {
         this.stats.begin();
 
         if (!this.postProcessing) {

@@ -5,6 +5,7 @@ define(function(require) {
         this.components = {};
         this.tag = null;
         this.id = id++;
+        this.attributes = {};
         this.memory = {};
     }
 
@@ -15,6 +16,10 @@ define(function(require) {
         this.components[component.constructor.name] = component;
     };
 
+    Entity.prototype.hasComponent = function(name) {
+        return this.components.hasOwnProperty(name);
+    };
+
     Entity.prototype.getComponent = function(name) {
         return this.components[name];
     };
@@ -22,10 +27,24 @@ define(function(require) {
     Entity.prototype.removeComponent = function(component) {
         if (typeof component == "string") {
             delete this.components[component];
+            if (component.onRemove) component.onRemove();
         } else if (component.entity === this) {
             component.entity = null;
             delete this.components[component.constructor.name];
+            if (component.onRemove) component.onRemove();
         }
+    };
+
+    Entity.prototype.hasAttribute = function(name) {
+        return this.attributes.hasOwnProperty(name);
+    };
+
+    Entity.prototype.getAttribute = function(name) {
+        return this.attributes[name];
+    };
+
+    Entity.prototype.setAttribute = function(name, value) {
+        this.attributes[name] = value;
     };
 
     Entity.prototype.update = function(dt, elapsed) {

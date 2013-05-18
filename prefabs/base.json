@@ -3,6 +3,7 @@
     "tag": "Base",
     "components": {
         "Transform": {},
+        "Building": {},
         "Storage": {
             "initial": 0,
             "capacity": 50000
@@ -10,6 +11,7 @@
         "Appearance": {
             "color": "#333333",
             "size": 3
-        }
+        },
+        "Selectable": {}
     }
 }

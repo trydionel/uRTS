@@ -4,78 +4,86 @@ define(function(require) {
     var requestAnimationFrame = require('lib/requestAnimationFrame');
     var InputManager = require('core/inputManager');
     var Display = require('core/display');
+    var GUI = require('core/gui');
     var Factory = require('core/factory');
+    var CommandInterpreter = require('core/commandInterpreter');
     var async = require('lib/async');
+    var EventBus = require('core/eventBus');
+    var $ = require('jquery');
 
     function Game(options) {
         this.playing = true;
         this.loaded = false;
 
-        this.entities = [];
         this.width = 800;
         this.height = 600;
-        this.display = new Display(this, this.width, this.height);
+
+        this.systems = {
+            input: InputManager,
+            scene: this.scene,
+            gui: new GUI(),
+            display: new Display(this, this.width, this.height),
+            command: new CommandInterpreter(),
+            bus: EventBus
+        };
+
+        EventBus.immediateMode = true;
+        EventBus.subscribe('toggleMenu', this.toggleMenu.bind(this));
     }
 
     Game.prototype.load = function() {
         var game = this;
+        var instrument = function(label, fn) {
+            return function(next) {
+                console.time(label);
+                fn(next);
+                console.timeEnd(label);
+            };
+        };
         async.series([
-            function(next) {
-                console.log("Preloading factory resources...");
-                console.time('duration');
-                Factory.storage = game;
+            instrument("Preloading factory resources", function(next) {
+                Factory.storage = game.scene;
                 Factory.preloadResources(next);
-                console.timeEnd('duration');
-            },
-            function(next) {
-                console.log("Initializing rendering manager...");
-                console.time('duration');
-                game.display.initialize(next);
-                console.timeEnd('duration');
-            },
-            function(next) {
-                console.log("Loading scene...");
-                console.time('duration');
+            }),
+            instrument("Initializing rendering manager", function(next) {
+                game.systems.display.initialize(next);
+            }),
+            instrument("Initializing input", function(next) {
+                InputManager.width = game.width;
+                InputManager.height = game.height;
+                InputManager.observe(document.body);
+                next();
+            }),
+            instrument("Loading scene", function(next) {
+                game.systems.scene = game.scene;
+                game.scene.onLoad(function(scene) {
+                    game.systems.gui.player = game.players[0];
+                });
                 game.scene.onLoad(next);
                 game.scene.load();
-                console.timeEnd('duration');
-            }
+            })
         ], function() {
             console.log("Loaded!");
             game.loaded = true;
+            EventBus.immediateMode = false;
             game.run();
         });
     };
 
-    Game.prototype.addEntity = function(entity) {
-        this.entities.push(entity);
-
-        // Ensure the 'Start' event is triggered on new entities, even after the
-        // initial loading phase has completed.
-        if (this.loaded) entity.broadcast('Start');
-    };
-
-    Game.prototype.removeEntity = function(entity) {
-        var index = this.entities.indexOf(entity);
-        if (index != -1) {
-            this.entities.splice(index, 1);
-        }
-    };
-
     Game.prototype.debugList = function() {
         var html = '<ul>';
-        this.entities.forEach(function(entity, i) {
+        this.scene.entities.forEach(function(entity, i) {
             if (entity.tag === 'Resource' || entity.tag === null || entity.tag === 'Camera') return;
             html += '<li><a class="entity-details" href="#" data-id="' + i + '">' + entity.tag + '</a></li>';
         });
         html += '</ul>';
 
-        document.getElementById('debug').innerHTML = html;
+        document.getElementById('debug').innerHTML += html;
 
-        var camera = this.entities.filter(function(e) { return e.tag === 'Camera'; })[0];
+        var camera = this.scene.entities.filter(function(e) { return e.tag === 'Camera'; })[0];
         var centerOnEntity = function(e) {
             var id = e.target.dataset.id;
-            var entity = this.entities[id];
+            var entity = this.scene.entities[id];
             camera.getComponent('Camera').follow(entity);
         }.bind(this);
         var links = document.querySelectorAll('.entity-details');
@@ -84,37 +92,39 @@ define(function(require) {
         }
     };
 
+    Game.prototype.toggleMenu = function() {
+        this._menuShown = !this._menuShown;
+        $('#menu').toggle(this._menuShown);
+    };
+
     Game.prototype.fixedUpdate = function(dt) {
-        var entity;
-        for (var i in this.entities) {
-            entity = this.entities[i];
-
-            var appearance = entity.getComponent('Appearance');
-            if (appearance && !appearance.displayed) {
-                this.display.add(appearance.mesh);
-                appearance.displayed = true;
-            }
-
-            entity.fixedUpdate(dt);
+        for (var system in this.systems) {
+            var _ref = this.systems[system]; if (_ref && _ref.fixedUpdate) _ref.fixedUpdate(dt);
         }
+        InputManager.lateUpdate(); // FIXME: When does this need to run...?
     };
 
     Game.prototype.update = function(dt, elapsed) {
-        InputManager.update();
-
-        var entity;
-        for (var i in this.entities) {
-            entity = this.entities[i];
-            entity.update(dt, elapsed);
-        }
+        this.execute('update', dt, elapsed);
     };
 
-    var now = function() {
-        if (window.performance && window.performance.now)
-            return window.performance.now();
-        else
-            return Date.now();
+    var slice = Array.prototype.slice;
+    Game.prototype.execute = function(method) {
+       var args = slice.call(arguments, 1);
+       for (var name in this.systems) {
+           var system = this.systems[name];
+           if (system[method]) {
+               system[method].apply(system, args);
+           }
+       }
     };
+
+    var now;
+    if (window.performance && window.performance.now) {
+        now = window.performance.now.bind(window.performance);
+    } else {
+        now = Date.now.bind(Date);
+    }
 
     Game.prototype.run = function() {
         this.playing = true;
@@ -124,25 +134,23 @@ define(function(require) {
         var logicRate = 200; // 5fps
         var lastLogicTick;
 
-        InputManager.observe(document.body);
         this.debugList();
-        this.entities.forEach(function(entity) {
+        this.scene.entities.forEach(function(entity) {
             entity.broadcast('Start', game);
         });
 
         var render = function(t) {
-            try {
+//            try {
                 var dt = t - t0;
                 var elapsed = Math.clamp((t - lastLogicTick) / logicRate, 0, 1);
                 t0 = t;
 
                 if (game.playing) requestAnimationFrame(render);
                 game.update(dt, elapsed);
-                game.display.render();
-            } catch(e) {
-                game.stop();
-                throw e;
-            }
+//            } catch(e) {
+//                game.stop();
+//                throw e;
+//            }
         };
         render(now());
 
@@ -162,7 +170,6 @@ define(function(require) {
     };
 
     Game.prototype.stop = function() {
-        InputManager.detach();
         this.playing = false;
     };
 

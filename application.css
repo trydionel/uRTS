@@ -1,4 +1,13 @@
 /* http://nicolasgallagher.com/micro-clearfix-hack/ */
+body {
+    padding: 1em;
+}
+
+header {
+    float: right;
+    line-height: 0;
+}
+
 article:before, article:after {
     content: " "; /* 1 */
     display: table; /* 2 */
@@ -29,4 +38,119 @@ section.sidebar {
 
 section#debug {
     width: 25%;
+}
+
+#container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+}
+
+.paused {
+    -webkit-filter: blur(5px);
+}
+
+#game, #gui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+*:focus {
+    outline: none;
+}
+
+#console {
+    position: absolute;
+    z-index: 1;
+    top: 35px;
+}
+
+#console input {
+    background-color: gray;
+    color: white;
+    opacity: 0.3;
+    border: none;
+}
+#console input:focus {
+    opacity: 0.7;
+}
+
+#gui div {
+    background-color: #333333;
+    color: white;
+    border: 1px solid red;
+}
+
+#gui #toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 30px;
+}
+
+#gui #minimap {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+
+    width: 25%;
+    height: 33%;
+}
+
+#gui #details {
+    position: absolute;
+    left: 25%;
+    bottom: 0;
+
+    width: 50%;
+    height: 25%;
+}
+
+#gui #build {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+
+    width: 25%;
+    height: 33%;
+}
+
+#menu {
+    width: 100%;
+    height: 100%;
+    display: none;
+    position: relative;
+    z-index: 10;
+    background-color: rgba(128, 128, 128, 0.5);
+}
+
+#menu ul {
+    list-style-type: none;
+    width: 60%;
+    margin: 0 auto;
+    padding: 0;
+}
+
+#menu a {
+    display: block;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+    line-height: 40px;
+    color: white;
+}
+
+#menu a:hover {
+    -webkit-transition: background-color 0.2s;
+    -moz-transition: background-color 0.2s;
+    -o-transition: background-color 0.2s;
+    transition: background-color 0.2s;
+    background-color: white;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: black;
 }

@@ -8,15 +8,34 @@
 </head>
 <body>
     <header>
-        <h1>uRTS</h1>
+        <h1>μRTS</h1>
     </header>
     <article>
         <section class="primary">
-            <div id="game"></div>
-            <br />
-            <a id="start" href="#">Start</a>
-            <a id="stop" href="#">Stop</a>
-            <a id="reroll" href="#">Reroll</a>
+            <div id="container">
+                <div id="game"></div>
+                <form id="console" action="#">
+                    <input type="text">
+                </form>
+                <div id="gui">
+                    <div id="toolbar">
+                        Ore <span id="ore"></span>
+                        Units <span id="units"></span> / <span id="space"></span>
+                    </div>
+
+                    <div id="minimap"></div>
+                    <div id="details"></div>
+                    <div id="build"></div>
+                </div>
+                <div id="menu">
+                    <ul>
+                        <li><a id="start" href="#">Start</a></li>
+                        <li><a id="stop" href="#">Stop</a></li>
+                        <li><a id="reroll" href="#">Reroll</a></li>
+                    </ul>
+                </div>
+            </div>
+
         </section>
 
         <section id="debug">
