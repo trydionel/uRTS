@@ -58,7 +58,7 @@ define(function(require) {
         var pan = this.pan();
         if (pan) {
             this.target = null;
-            this.camera.position.addSelf(pan);
+            this.camera.position.add(pan);
         } else if (this.target) {
             this.lookAt(this.target);
         }
@@ -73,7 +73,7 @@ define(function(require) {
         if (Input.panDown)  tmp.y = -1;
         if (tmp.length() === 0) return null;
 
-        this.matrix.multiplyVector3(tmp.normalize().multiplyScalar(this.speed));
+        tmp.normalize().multiplyScalar(this.speed).applyProjection(this.matrix);
 
         return tmp;
     };
