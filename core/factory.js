@@ -2,11 +2,13 @@ define(function(require) {
     var _ = require('underscore');
     var Entity = require('core/entity');
     var async = require('lib/async');
+    var THREE = require('THREE');
 
     function Factory() {
         this.storage = null;
         this.prefabs = { generic: {} };
         this.components = {};
+        this.models = {};
     }
 
     Factory.prototype.getPrefab = function(name) {
@@ -25,6 +27,15 @@ define(function(require) {
     Factory.prototype.registerComponent = function(name, value) {
         if (this.components.hasOwnProperty(name)) throw "Component '" + name + "' already exists";
         this.components[name] = value;
+    };
+
+    Factory.prototype.getModel = function(name) {
+        return this.models[name];
+    };
+
+    Factory.prototype.registerModel = function(name, value) {
+        if (this.models.hasOwnProperty(name)) throw "Model '" + name + "' already exists";
+        this.models[name] = value;
     };
 
     Factory.prototype.preloadResources = function(complete) {
@@ -48,8 +59,22 @@ define(function(require) {
                 });
             };
         };
+        var loadModel = function(model) {
+            return function(next) {
+                var path = 'models/' + model;
+                var loader = new THREE.STLLoader();
+                loader.addEventListener('load', function(event) {
+                    var geometry = event.content;
+                    // FIXME: Figure out how to export normals from blender...
+                    geometry.computeFaceNormals();
+                    factory.registerModel(model, geometry);
+                    next();
+                });
+                loader.load(path);
+            };
+        };
 
-        async.series([
+        async.parallel([
             loadPrefab('worker'),
             loadPrefab('field'),
             loadPrefab('camera'),
@@ -69,7 +94,8 @@ define(function(require) {
             loadComponent('terrainGenerator'),
             loadComponent('transform'),
             loadComponent('warriorAI'),
-            loadComponent('workerAI')
+            loadComponent('workerAI'),
+            loadModel('rock.stl')
         ], complete);
     };
 

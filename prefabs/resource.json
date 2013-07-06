@@ -9,7 +9,8 @@
         },
         "ResourceAI": {},
         "Appearance": {
-            "color": "#ffffff"
+            "color": "#ffffff",
+            "model": "rock.stl"
         }
     }
 }

@@ -2,6 +2,7 @@ define(function(require) {
 
     var THREE = require('THREE');
     var EventBus = require('core/eventBus');
+    var Factory = require('core/factory');
 
     function Appearance(options) {
         options = options || {};
@@ -10,8 +11,21 @@ define(function(require) {
         this.selected = false;
         this.position = null;
 
-        this.mesh = options.mesh || this.genericMesh();
+        this.mesh = options.mesh || this.loadSTL(options.model) || this.genericMesh();
     }
+
+    Appearance.prototype.loadSTL = function(model) {
+        if (!model) return;
+        var color = parseInt(this.color.replace('#', ''), 16);
+        var geometry = Factory.getModel(model);
+        var material = new THREE.MeshLambertMaterial({
+            color: new THREE.Color(color)
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = mesh.receiveShadow = true;
+
+        return mesh;
+    };
 
     Appearance.prototype.onStart = function() {
         // Store a reference back to the entity on the mesh
