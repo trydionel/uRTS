@@ -3,55 +3,27 @@ define(function(require) {
     var _ = require('underscore');
     var Factory = require('core/factory');
     var EasyStar = require('EasyStar');
+    var THREE = require('THREE');
 
     function Terrain(options) {
         this.size = options.size || 0;
         this.data = options.data || [];
-        this.resources = [];
-
-        this.initializePath();
-        this.initializeResources(10);
+        this.resources = options.resources || [];
     }
+
+    Terrain.prototype.onStart = function() {
+        this.initializePath();
+    };
 
     Terrain.prototype.initializePath = function() {
         this.path = new EasyStar.js(_.range(-20, 20, 1), this.onPathComplete.bind(this));
         this.path.setGrid(this.data);
     };
 
-    Terrain.prototype.initializeResources = function(n) {
-        var resource, x, y, z, cx, cy,
-        valid = false,
-        clusterSize = Math.random() * 5,
-        takenPositions = [];
-
-        // Keep an index of resources for faster lookups
-        this.resources = [];
-        for (var i = 0; i < n; i++) {
-            cx = Math.floor(Math.random() * (this.size - 4)) + 2;
-            cy = Math.floor(Math.random() * (this.size - 4)) + 2;
-
-            for (var c = 0; c < clusterSize; c++) {
-                do {
-                    valid = true;
-                    x = cx + Math.floor(Math.random() * 2 - 1);
-                    y = cy + Math.floor(Math.random() * 2 - 1);
-
-                    if (x < 0 || x >= this.size) valid = false;
-                    if (y < 0 || y >= this.size) valid = false;
-                    if (valid) z = this.data[y][x] + 0.5;
-                } while (valid && takenPositions.indexOf([x, y]) != -1);
-
-                resource = Factory.create('resource', { field: this, 'Transform': { x: x, y: y, z: z }});
-                this.resources.push(resource);
-                takenPositions.push([x, y]);
-            }
-        }
-    };
-
     Terrain.prototype.clearTiles = function(x, y, r) {
         for (var dy = -r; dy <= r; dy++) {
             for (var dx = -r; dx <= r; dx++) {
-                this.data[y][x] = 0;
+                this.data[x + this.size * y] = 0;
             }
         }
         // FIXME: No way to update the mesh
@@ -94,7 +66,7 @@ define(function(require) {
         if (x < 0 || x >= this.size || y < 0 || y >= this.size) {
             return undefined;
         } else {
-            return this.data[y][x];
+            return this.data[x + this.size * y];
         }
     };
 

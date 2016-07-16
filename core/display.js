@@ -5,8 +5,7 @@ define(function(require) {
     var async = require('lib/async');
     var EventBus = require('core/eventBus');
 
-    function Display(game, width, height) {
-        this.game = game;
+    function Display(width, height) {
         this.width = width;
         this.height = height;
         this.scene = new THREE.Scene();
@@ -51,18 +50,24 @@ define(function(require) {
         this.scene.add(this.ambient);
 
         this.light = new THREE.DirectionalLight(0xffdddd, 0.8);
-        this.light.position.x = -50;
-        this.light.position.y = -100;
-        this.light.position.z = 50;
-        this.light.castShadow = true;
+        this.light.position.set(-50, -100, 50);
+        this.light.castShadow = false;
         this.scene.add(this.light);
 
         this.shadow = new THREE.DirectionalLight(0xffffff);
-        this.shadow.position.set( 100, 100, 75 );
+        this.shadow.position.set(0, 100, 25);
+        this.shadow.target.position.set(100, 0, 0);
 		this.shadow.castShadow = true;
 		this.shadow.onlyShadow = true;
-		this.shadow.shadowCameraNear = 0.1;
-		this.shadow.shadowCameraFar = 250;
+        this.shadow.shadowCameraVisible = true;
+        this.shadow.shadowBias = 0.5;
+        this.shadow.shadowCameraFov = 60;
+		this.shadow.shadowCameraNear = 1;
+		this.shadow.shadowCameraFar = 150;
+        this.shadow.shadowCameraRight = 25;
+        this.shadow.shadowCameraLeft = -25;
+        this.shadow.shadowCameraTop = 75;
+        this.shadow.shadowCameraBottom = -75;
         this.scene.add(this.shadow);
 
         next();
@@ -75,7 +80,7 @@ define(function(require) {
         this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         this.renderer.setSize(this.width, this.height);
         this.renderer.setClearColor( this.scene.fog.color, 1 );
-        this.renderer.shadowMapEnabled = true;
+        this.renderer.shadowMapEnabled = false;
         this.renderer.shadowMapSoft = true;
 
         this.renderer.shadowCameraNear = this.camera.near;
@@ -126,17 +131,18 @@ define(function(require) {
          * Post-processing Passes
          *******************************/
         var passes = {
-            'SSAO': {
-                'tDepth': this.depthTarget,
-                'size': new THREE.Vector2(sW, sH),
-                'cameraNear': this.camera.near,
-                'cameraFar': this.camera.far,
-                'fogNear': this.scene.fog.near,
-                'fogFar': this.scene.fog.far,
-                'fogEnabled': true,
-                'aoClamp': 0.5,
-                'onlyAO': false
-            },
+            // Bug in Intel GPU renderer? https://github.com/mrdoob/three.js/issues/3425
+            // 'SSAO': {
+            //     'tDepth': this.depthTarget,
+            //     'size': new THREE.Vector2(sW, sH),
+            //     'cameraNear': this.camera.near,
+            //     'cameraFar': this.camera.far,
+            //     'fogNear': this.scene.fog.near,
+            //     'fogFar': this.scene.fog.far,
+            //     'fogEnabled': true,
+            //     'aoClamp': 0.5,
+            //     'onlyAO': false
+            // },
             'ColorCorrection': {
                 'mulRGB': new THREE.Vector3(1.4, 1.4, 1.4),
                 'powRGB': new THREE.Vector3(1.2, 1.2, 1.2)

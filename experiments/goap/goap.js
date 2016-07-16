@@ -9,6 +9,9 @@ require.config({
         'SimplexNoise': 'lib/perlin-noise-simplex',
         'THREE': 'lib/three.max',
         'Stats': 'lib/stats.min',
+        'jquery': 'lib/jquery',
+        'mediator': 'lib/mediator',
+        'mustache': 'lib/mustache',
         'async': 'lib/async'
     }
 });

@@ -25,6 +25,7 @@ define(function(require) {
     GOAPScene.prototype.load = function() {
         var field = Factory.create('field');
         var player = new Player(this.game, 'blue', field, { human: true, workers: 0, warriors: 0 });
+        this.game.players = [player];
         player.clearFog(0, 0, 1000);
 
         var selector = new Selector();

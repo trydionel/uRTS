@@ -61,7 +61,7 @@ define(function(require) {
         };
         var loadModel = function(model) {
             return function(next) {
-                var path = 'models/' + model;
+                var path = require.toUrl('models/' + model);
                 var loader = new THREE.STLLoader();
                 loader.addEventListener('load', function(event) {
                     var geometry = event.content;

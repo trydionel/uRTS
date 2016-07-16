@@ -12,6 +12,9 @@ define(function(require) {
         this.position = null;
 
         this.mesh = options.mesh || this.loadSTL(options.model) || this.genericMesh();
+        this.halo = this.haloMesh();
+
+        EventBus.on('SelectEntity', this.checkSelection.bind(this));
     }
 
     Appearance.prototype.loadSTL = function(model) {
@@ -34,10 +37,16 @@ define(function(require) {
         this.position = this.entity.getComponent('Transform');
 
         EventBus.publish('MeshAdded', this.mesh);
+        EventBus.publish('MeshAdded', this.halo);
     };
 
     Appearance.prototype.onRemove = function() {
         EventBus.publish('MeshRemoved', this.mesh);
+        EventBus.publish('MeshRemoved', this.halo);
+    };
+
+    Appearance.prototype.onClick = function() {
+        EventBus.trigger('SelectEntity', this.entity);
     };
 
     Appearance.prototype.genericMesh = function() {
@@ -52,12 +61,19 @@ define(function(require) {
         return mesh;
     };
 
-    Appearance.prototype.onSelect = function() {
-        this.selected = true;
+    Appearance.prototype.haloMesh = function() {
+        var geometry = new THREE.CircleGeometry(1.1 * this.size);
+        var material = new THREE.LineBasicMaterial({
+            color: new THREE.Color(0xff0000)
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = mesh.receiveShadow = mesh.visible = false;
+
+        return mesh;
     };
 
-    Appearance.prototype.onUnselect = function() {
-        this.selected = false;
+    Appearance.prototype.checkSelection = function(entity) {
+        this.selected = (this.entity === entity);
     };
 
     Appearance.prototype.update = function(dt, elapsed) {
@@ -69,6 +85,9 @@ define(function(require) {
         z = Math.lerp(this.position.previousZ, this.position.z, elapsed);
 
         this.mesh.position.set(x, y, z);
+
+        this.halo.position.set(x, y, z - 0.49 * this.size);
+        this.halo.visible = this.selected;
     };
 
     return Appearance;

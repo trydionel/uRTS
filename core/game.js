@@ -22,7 +22,7 @@ define(function(require) {
             input: InputManager,
             scene: this.scene,
             gui: new GUI(),
-            display: new Display(this, this.width, this.height),
+            display: new Display(this.width, this.height),
             command: new CommandInterpreter(),
             bus: EventBus
         };
@@ -131,42 +131,36 @@ define(function(require) {
 
         var t0 = now() - 16;
         var game = this;
-        var logicRate = 200; // 5fps
-        var lastLogicTick;
 
         this.debugList();
         this.scene.entities.forEach(function(entity) {
             entity.broadcast('Start', game);
         });
 
-        var render = function(t) {
-//            try {
-                var dt = t - t0;
-                var elapsed = Math.clamp((t - lastLogicTick) / logicRate, 0, 1);
-                t0 = t;
+        var accumulator = 0;
+        var logicRate = 200; // 5fps
+        var maxAccumulator = 1000; // a full second
+        var runloop = function(t) {
+            if (game.playing) requestAnimationFrame(runloop);
 
-                if (game.playing) requestAnimationFrame(render);
-                game.update(dt, elapsed);
-//            } catch(e) {
-//                game.stop();
-//                throw e;
-//            }
-        };
-        render(now());
+            var dt = t - t0;
+            accumulator += dt;
 
-        var logic = function() {
-            try {
-                var dt;
-                lastLogicTick = now();
-                dt = lastLogicTick - t0;
-                if (game.playing) setTimeout(logic, logicRate);
-                game.fixedUpdate(dt);
-            } catch (e) {
-                game.stop();
-                throw e;
+            var elapsed = Math.clamp(accumulator / logicRate, 0, 1);
+            game.update(dt, elapsed);
+
+            if (accumulator > maxAccumulator) {
+                accumulator = maxAccumulator;
             }
+
+            while (accumulator > logicRate) {
+                game.fixedUpdate(logicRate);
+                accumulator -= logicRate;
+            }
+
+            t0 = t;
         };
-        logic();
+        runloop(now());
     };
 
     Game.prototype.stop = function() {
